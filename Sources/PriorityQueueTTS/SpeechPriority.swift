@@ -25,8 +25,8 @@ import Foundation
 enum SpeechPriority: Int8 {
     typealias RawValue = Int8
 
-    case Low = -10
-    case Normal = 0
-    case High = 10
-    case Required = 50
+    case Low = 0
+    case Normal = 1
+    case High = 2
+    case Required = 3
 }
