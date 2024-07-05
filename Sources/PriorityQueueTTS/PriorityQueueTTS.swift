@@ -36,7 +36,10 @@ class PriorityQueueTTS: NSObject {
     }
 
     func append(text: String, priority: SpeechPriority = .Normal, timeout_sec: Double = 1.0,
-                completion: ((_ item: SpeechItem, _ canceled: Bool) -> Void)?) {
+                completion: ((_ item: SpeechItem, _ reason: CompletionReason) -> Void)?) {
+        if let currentItem = speakingItem {
+            tts.stopSpeaking(at: .immediate)
+        }
         let now = Date().timeIntervalSince1970
         let expire = now + timeout_sec
         let item = SpeechItem(text: text, priority: priority,
@@ -51,6 +54,19 @@ class PriorityQueueTTS: NSObject {
             }
             RunLoop.current.add(timer, forMode: .default)
             RunLoop.current.run()
+        }
+    }
+
+    func pause() {
+        tts.stopSpeaking(at: .word)
+    }
+
+    func cancel() {
+        tts.stopSpeaking(at: .word)
+        while !queue.isEmpty {
+            guard let item = queue.extractMax() else { break }
+            guard let completion = item.completion else { continue }
+            completion(item, .Canceled)
         }
     }
 
@@ -73,6 +89,7 @@ class PriorityQueueTTS: NSObject {
         guard let item = speakingItem else { return }
         guard let range = speakingRange else { return }
         item.update(with: range)
+        queue.insert(item)
     }
 }
 
@@ -86,8 +103,16 @@ extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         if let item = speakingItem,
+           let range = speakingRange,
            let completion = item.completion {
-            completion(item, false)
+            // bug from iOS 15, didFinish is called instead of didCancel
+            if item.utterance == utterance,
+               range.location + range.length < item.text.count {
+                completion(item, .Paused)
+                updateItem()
+            } else {
+                completion(item, .Completed)
+            }
         }
         speakingItem = nil
         speakingRange = nil
@@ -97,7 +122,7 @@ extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
         updateItem()
         if let item = speakingItem,
            let completion = item.completion {
-            completion(item, false)
+            completion(item, .Paused)
         }
         speakingItem = nil
         speakingRange = nil

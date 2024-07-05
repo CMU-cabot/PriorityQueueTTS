@@ -26,13 +26,13 @@ import XCTest
 final class PriorityQueueTTSTests: XCTestCase {
 
     /*
-     add Hello1, priority normal
-     add Hello2, priority normal
-     add Hello3, priority high
+     add "Hello1", priority normal
+     add "Hello2", priority normal
+     add "Hello3", priority high
      start
-     should speak Hello3, Hello1, Hello2
+     should speak "Hello3", "Hello1", "Hello2"
      */
-    func test1() throws {
+    func test1_high_priority_comes_first() throws {
         let expectation = self.expectation(description: "Wait for 10 seconds")
         let tts = PriorityQueueTTS()
         var count = 0
@@ -50,5 +50,45 @@ final class PriorityQueueTTSTests: XCTestCase {
         }
         tts.start()
         waitForExpectations(timeout: 10, handler: nil)
+    }
+
+    let sample: String = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+
+    /*
+     add `sample`, priority normal
+     start and wait 3 secs
+     add "High Priority", priority high
+     should speak `sample` and pause, "High Priority", then rest of `sample`
+     */
+    func test2_high_priority_interrupt() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var count = 0
+        tts.append(text: sample, timeout_sec: 30) { item, reason in
+            switch(reason) {
+            case .Paused:
+                XCTAssertEqual(self.sample, item.text)
+                XCTAssertEqual(count, 0)
+                count += 1
+                break
+            case .Completed:
+                XCTAssertLessThan(item.text.count, self.sample.count)
+                XCTAssertEqual(count, 2)
+                count += 1
+                expectation.fulfill()
+                break
+            case .Canceled:
+                XCTAssertTrue(false)
+                break
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            tts.append(text: "High Priority Message", priority: .High, timeout_sec: 1) { item, reason in
+                XCTAssertEqual(count, 1)
+                count += 1
+            }
+        }
+        tts.start()
+        waitForExpectations(timeout: 30, handler: nil)
     }
 }

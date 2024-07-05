@@ -32,11 +32,11 @@ class SpeechItem {
     let priority: SpeechPriority
     let created_time: TimeInterval
     let expire_at: TimeInterval
-    let completion: ((_ item: SpeechItem, _ canceled: Bool) -> Void)?
+    let completion: ((_ item: SpeechItem, _ reason: CompletionReason) -> Void)?
     var _utterance: AVSpeechUtterance? = nil
 
     init(text: String, priority: SpeechPriority, created_time: TimeInterval, expire_at: TimeInterval,
-         completion: ((_ item: SpeechItem, _ canceled: Bool) -> Void)? = nil) {
+         completion: ((_ item: SpeechItem, _ reason: CompletionReason) -> Void)? = nil) {
         self.text = text
         self.priority = priority
         self.created_time = created_time
@@ -48,13 +48,17 @@ class SpeechItem {
 extension SpeechItem {
     var utterance: AVSpeechUtterance {
         get {
-            AVSpeechUtterance(string: self.text)
+            if _utterance == nil {
+                _utterance = AVSpeechUtterance(string: self.text)
+            }
+            return _utterance!
         }
     }
     
     func update(with range: NSRange) {
         if let newText = self.text.substring(from: range) {
             text = newText
+            _utterance = nil
         }
     }
 }
