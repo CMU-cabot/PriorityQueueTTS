@@ -14,13 +14,13 @@ import AVFoundation
 // earier created first
 class SpeechItem {
     var text: String
-    let priority: Int8
+    let priority: SpeechPriority
     let created_time: TimeInterval
     let expire_at: TimeInterval
     let completion: ((_ item: SpeechItem, _ canceled: Bool) -> Void)?
     var _utterance: AVSpeechUtterance? = nil
 
-    init(text: String, priority: Int8, created_time: TimeInterval, expire_at: TimeInterval, 
+    init(text: String, priority: SpeechPriority, created_time: TimeInterval, expire_at: TimeInterval,
          completion: ((_ item: SpeechItem, _ canceled: Bool) -> Void)? = nil) {
         self.text = text
         self.priority = priority
@@ -57,7 +57,7 @@ extension SpeechItem: Comparable {
         if lhs.priority == rhs.priority {
             return lhs.created_time > rhs.created_time
         }
-        return lhs.priority < rhs.priority
+        return lhs.priority.rawValue < rhs.priority.rawValue
     }
     static func == (lhs: SpeechItem, rhs: SpeechItem) -> Bool {
         return lhs.priority == rhs.priority && lhs.created_time == rhs.created_time

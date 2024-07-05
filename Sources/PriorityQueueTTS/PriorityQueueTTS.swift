@@ -15,7 +15,7 @@ class PriorityQueueTTS: NSObject {
         tts.delegate = self
     }
 
-    func append(text: String, priority: Int8 = 0, timeout_sec: Double = 1.0,
+    func append(text: String, priority: SpeechPriority = .Normal, timeout_sec: Double = 1.0,
                 completion: ((_ item: SpeechItem, _ canceled: Bool) -> Void)?) {
         let now = Date().timeIntervalSince1970
         let expire = now + timeout_sec
