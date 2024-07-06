@@ -30,3 +30,9 @@ enum SpeechPriority: Int8 {
     case High = 2
     case Required = 3
 }
+
+extension SpeechPriority: Comparable {
+    static func < (lhs: SpeechPriority, rhs: SpeechPriority) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+}

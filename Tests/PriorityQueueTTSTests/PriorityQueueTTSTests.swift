@@ -58,7 +58,7 @@ final class PriorityQueueTTSTests: XCTestCase {
      add `sample`, priority normal
      start and wait 3 secs
      add "High Priority", priority high
-     should speak `sample` and pause, "High Priority", then rest of `sample`
+     should speak `sample` and pause, "High Priority Message", then rest of `sample`
      */
     func test2_high_priority_interrupt() throws {
         let expectation = self.expectation(description: "Wait for 30 seconds")
@@ -86,6 +86,42 @@ final class PriorityQueueTTSTests: XCTestCase {
             tts.append(text: "High Priority Message", priority: .High, timeout_sec: 1) { item, reason in
                 XCTAssertEqual(count, 1)
                 count += 1
+            }
+        }
+        tts.start()
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+
+    /*
+     add `sample`, priority normal
+     start and wait 3 secs
+     add "Same Priority", priority normal
+     should speak `sample`, and then "Normal Priority Message"
+     */
+    func test3_same_priority_should_not_interrupt() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var count = 0
+        tts.append(text: sample, timeout_sec: 30) { item, reason in
+            switch(reason) {
+            case .Paused:
+                XCTAssertTrue(false)
+                break
+            case .Completed:
+                XCTAssertEqual(item.text, self.sample)
+                XCTAssertEqual(count, 0)
+                count += 1
+                break
+            case .Canceled:
+                XCTAssertTrue(false)
+                break
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            tts.append(text: "Normal Priority Message", priority: .Normal, timeout_sec: 15) { item, reason in
+                XCTAssertEqual(count, 1)
+                count += 1
+                expectation.fulfill()
             }
         }
         tts.start()

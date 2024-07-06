@@ -37,7 +37,8 @@ class PriorityQueueTTS: NSObject {
 
     func append(text: String, priority: SpeechPriority = .Normal, timeout_sec: Double = 1.0,
                 completion: ((_ item: SpeechItem, _ reason: CompletionReason) -> Void)?) {
-        if let currentItem = speakingItem {
+        if let currentItem = speakingItem,
+           currentItem.priority < priority {
             tts.stopSpeaking(at: .immediate)
         }
         let now = Date().timeIntervalSince1970
