@@ -24,10 +24,11 @@ import Foundation
 import AVFoundation
 
 class PriorityQueueTTS: NSObject {
-    private var queue: PriorityQueue<SpeechItem> = PriorityQueue<SpeechItem>()
+    private var queue: PriorityQueue<QeueEntry> = PriorityQueue<QeueEntry>()
     private var tts: AVSpeechSynthesizer
-    private var speakingItem: SpeechItem?
+    private var processingEntry: QeueEntry?
     private var speakingRange: NSRange?
+    private let dipatchQueue: DispatchQueue = DispatchQueue.global(qos: .utility)
 
     override init() {
         tts = AVSpeechSynthesizer()
@@ -36,8 +37,8 @@ class PriorityQueueTTS: NSObject {
     }
 
     func append(text: String, priority: SpeechPriority = .Normal, timeout_sec: Double = 1.0,
-                completion: ((_ item: SpeechItem, _ reason: CompletionReason) -> Void)?) {
-        if let currentItem = speakingItem,
+                completion: ((_ item: QeueEntry, _ reason: CompletionReason) -> Void)?) {
+        if let currentItem = processingEntry,
            currentItem.priority < priority {
             tts.stopSpeaking(at: .immediate)
         }
@@ -48,9 +49,22 @@ class PriorityQueueTTS: NSObject {
         queue.insert(item)
     }
 
+    func append(pause: Double, priority: SpeechPriority = .Normal, timeout_sec: Double = 1.0,
+                completion: ((_ item: QeueEntry, _ reason: CompletionReason) -> Void)?) {
+        if let currentItem = processingEntry,
+           currentItem.priority < priority {
+            tts.stopSpeaking(at: .immediate)
+        }
+        let now = Date().timeIntervalSince1970
+        let expire = now + timeout_sec
+        let item = PauseItem(duration: pause, priority: priority,
+                             created_time: now, expire_at: expire, completion: completion)
+        queue.insert(item)
+    }
+
     func start() {
-        DispatchQueue.global(qos: .utility) .async {
-            let timer = Timer(timeInterval: 0.1, repeats: true) { timer in
+        dipatchQueue.async {
+            let timer = Timer(timeInterval: 0.01, repeats: true) { timer in
                 self.processQueue()
             }
             RunLoop.current.add(timer, forMode: .default)
@@ -72,25 +86,39 @@ class PriorityQueueTTS: NSObject {
     }
 
     private func processQueue() {
-        guard speakingItem == nil else { return }
+        guard processingEntry == nil else { return }
         guard !queue.isEmpty else { return }
-        guard let item = queue.extractMax() else { return }
-        guard Date().timeIntervalSince1970 < item.expire_at else { return }
-        speakingItem = item
-        speak(item: item)
+        guard let entry = queue.extractMax() else { return }
+        guard Date().timeIntervalSince1970 < entry.expire_at else { return }
+        processingEntry = entry
+        process(entry: entry)
     }
 
-    private func speak(item: SpeechItem) {
-        NSLog("speak text:\(item.text), priority:\(item.priority)")
-        speakingItem = item
-        tts.speak(item.utterance)
+    private func process(entry: QeueEntry) {
+        processingEntry = entry
+        if let speech = entry as? SpeechItem {
+            NSLog("speak text:\(speech.text), priority:\(entry.priority)")
+            tts.speak(speech.utterance)
+        }
+        if let pause = entry as? PauseItem {
+            NSLog("\(pause.text), priority:\(entry.priority)")
+            dipatchQueue.asyncAfter(deadline: .now() + pause.duration) {
+                if let entry = self.processingEntry,
+                   let completion = entry.completion {
+                    completion(entry, .Completed)
+                    self.processingEntry = nil
+                }
+            }
+        }
     }
 
     private func updateItem() {
-        guard let item = speakingItem else { return }
+        guard let entry = processingEntry else { return }
         guard let range = speakingRange else { return }
-        item.update(with: range)
-        queue.insert(item)
+        if let speech = entry as? SpeechItem {
+            speech.update(with: range)
+        }
+        queue.insert(entry)
     }
 }
 
@@ -103,29 +131,30 @@ extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        if let item = speakingItem,
+        if let entry = processingEntry,
            let range = speakingRange,
-           let completion = item.completion {
+           let completion = entry.completion {
             // bug from iOS 15, didFinish is called instead of didCancel
-            if item.utterance == utterance,
-               range.location + range.length < item.text.count {
-                completion(item, .Paused)
+            if let speechItem = entry as? SpeechItem,
+               speechItem.utterance == utterance,
+               range.location + range.length < entry.text.count {
+                completion(entry, .Paused)
                 updateItem()
             } else {
-                completion(item, .Completed)
+                completion(entry, .Completed)
             }
         }
-        speakingItem = nil
+        processingEntry = nil
         speakingRange = nil
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
         updateItem()
-        if let item = speakingItem,
+        if let item = processingEntry,
            let completion = item.completion {
             completion(item, .Paused)
         }
-        speakingItem = nil
+        processingEntry = nil
         speakingRange = nil
     }
 
