@@ -24,9 +24,9 @@ import Foundation
 import AVFoundation
 
 class PriorityQueueTTS: NSObject {
-    private var queue: PriorityQueue<QeueEntry> = PriorityQueue<QeueEntry>()
+    private var queue: PriorityQueue<QueueEntry> = PriorityQueue<QueueEntry>()
     private var tts: AVSpeechSynthesizer
-    private var processingEntry: QeueEntry?
+    private var processingEntry: QueueEntry?
     private var speakingRange: NSRange?
     private let dipatchQueue: DispatchQueue = DispatchQueue.global(qos: .utility)
 
@@ -37,7 +37,7 @@ class PriorityQueueTTS: NSObject {
     }
 
     func append(text: String, priority: SpeechPriority = .Normal, timeout_sec: Double = 1.0,
-                completion: ((_ item: QeueEntry, _ reason: CompletionReason) -> Void)?) {
+                completion: ((_ item: QueueEntry, _ reason: CompletionReason) -> Void)?) {
         if let currentItem = processingEntry,
            currentItem.priority < priority {
             tts.stopSpeaking(at: .immediate)
@@ -50,7 +50,7 @@ class PriorityQueueTTS: NSObject {
     }
 
     func append(pause: Double, priority: SpeechPriority = .Normal, timeout_sec: Double = 1.0,
-                completion: ((_ item: QeueEntry, _ reason: CompletionReason) -> Void)?) {
+                completion: ((_ item: QueueEntry, _ reason: CompletionReason) -> Void)?) {
         if let currentItem = processingEntry,
            currentItem.priority < priority {
             tts.stopSpeaking(at: .immediate)
@@ -94,7 +94,7 @@ class PriorityQueueTTS: NSObject {
         process(entry: entry)
     }
 
-    private func process(entry: QeueEntry) {
+    private func process(entry: QueueEntry) {
         processingEntry = entry
         if let speech = entry as? SpeechItem {
             NSLog("speak text:\(speech.text), priority:\(entry.priority)")

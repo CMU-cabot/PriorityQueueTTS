@@ -21,55 +21,23 @@
  *******************************************************************************/
 
 import Foundation
-import AVFoundation
 
-// class SpeechItem
-// higher priority first
-// earier created first
-class SpeechItem: QueueEntry {
+class PauseItem: QueueEntry {
+    var duration: Double
     override var text: String {
         get {
-            return _text
+            return "pause \(duration)"
         }
     }
-    var _text: String
-    var _utterance: AVSpeechUtterance? = nil
 
     init(
-        text: String,
+        duration: Double,
         priority: SpeechPriority,
         created_time: TimeInterval,
         expire_at: TimeInterval,
         completion: ((_ item: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
     ) {
-        self._text = text
+        self.duration = duration
         super.init(priority: priority, created_time: created_time, expire_at: expire_at, completion: completion)
     }
 }
-
-extension SpeechItem {
-    var utterance: AVSpeechUtterance {
-        get {
-            if _utterance == nil {
-                _utterance = AVSpeechUtterance(string: self.text)
-            }
-            return _utterance!
-        }
-    }
-
-    func update(with range: NSRange) {
-        if let newText = self.text.substring(from: range) {
-            _text = newText
-            _utterance = nil
-        }
-    }
-}
-
-extension String {
-    func substring(from range: NSRange) -> String? {
-        guard let rangeStart = Range(range, in: self) else { return nil }
-        let startIndex = rangeStart.lowerBound
-        return String(self[startIndex...])
-    }
-}
-

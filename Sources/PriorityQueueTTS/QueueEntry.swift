@@ -21,55 +21,34 @@
  *******************************************************************************/
 
 import Foundation
-import AVFoundation
 
-// class SpeechItem
-// higher priority first
-// earier created first
-class SpeechItem: QueueEntry {
-    override var text: String {
-        get {
-            return _text
-        }
-    }
-    var _text: String
-    var _utterance: AVSpeechUtterance? = nil
+class QueueEntry: Comparable {
+    var text: String { get { "" } }  // should be overrided by Child class
+    let priority: SpeechPriority
+    let created_time: TimeInterval
+    let expire_at: TimeInterval
+    let completion: ((_ item: QueueEntry, _ reason: CompletionReason) -> Void)?
 
     init(
-        text: String,
         priority: SpeechPriority,
         created_time: TimeInterval,
         expire_at: TimeInterval,
-        completion: ((_ item: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
+        completion: ((_: QueueEntry, _: CompletionReason) -> Void)?
     ) {
-        self._text = text
-        super.init(priority: priority, created_time: created_time, expire_at: expire_at, completion: completion)
+        self.priority = priority
+        self.created_time = created_time
+        self.expire_at = expire_at
+        self.completion = completion
     }
-}
 
-extension SpeechItem {
-    var utterance: AVSpeechUtterance {
-        get {
-            if _utterance == nil {
-                _utterance = AVSpeechUtterance(string: self.text)
-            }
-            return _utterance!
+    // Comparable
+    static func < (lhs: QueueEntry, rhs: QueueEntry) -> Bool {
+        if lhs.priority == rhs.priority {
+            return lhs.created_time > rhs.created_time
         }
+        return lhs.priority.rawValue < rhs.priority.rawValue
     }
-
-    func update(with range: NSRange) {
-        if let newText = self.text.substring(from: range) {
-            _text = newText
-            _utterance = nil
-        }
+    static func == (lhs: QueueEntry, rhs: QueueEntry) -> Bool {
+        return lhs.priority == rhs.priority && lhs.created_time == rhs.created_time
     }
 }
-
-extension String {
-    func substring(from range: NSRange) -> String? {
-        guard let rangeStart = Range(range, in: self) else { return nil }
-        let startIndex = rangeStart.lowerBound
-        return String(self[startIndex...])
-    }
-}
-
