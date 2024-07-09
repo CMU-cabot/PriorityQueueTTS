@@ -37,13 +37,12 @@ class SpeechItem: QueueEntry {
 
     init(
         text: String,
-        priority: SpeechPriority,
-        created_time: TimeInterval,
-        expire_at: TimeInterval,
+        priority: SpeechPriority = .Normal,
+        timeout_sec: TimeInterval = 10.0,
         completion: ((_ item: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
     ) {
         self._text = text
-        super.init(priority: priority, created_time: created_time, expire_at: expire_at, completion: completion)
+        super.init(priority: priority, timeout_sec: timeout_sec, completion: completion)
     }
 }
 

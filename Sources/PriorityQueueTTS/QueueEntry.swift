@@ -31,13 +31,12 @@ class QueueEntry: Comparable {
 
     init(
         priority: SpeechPriority,
-        created_time: TimeInterval,
-        expire_at: TimeInterval,
+        timeout_sec: TimeInterval,
         completion: ((_: QueueEntry, _: CompletionReason) -> Void)?
     ) {
         self.priority = priority
-        self.created_time = created_time
-        self.expire_at = expire_at
+        self.created_time = Date().timeIntervalSince1970
+        self.expire_at = self.created_time + timeout_sec
         self.completion = completion
     }
 

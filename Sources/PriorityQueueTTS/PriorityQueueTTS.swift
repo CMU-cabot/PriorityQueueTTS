@@ -35,31 +35,13 @@ class PriorityQueueTTS: NSObject {
         super.init()
         tts.delegate = self
     }
-
-    func append(text: String, priority: SpeechPriority = .Normal, timeout_sec: Double = 1.0,
-                completion: ((_ item: QueueEntry, _ reason: CompletionReason) -> Void)?) {
+    
+    func append(entry: QueueEntry) {
         if let currentItem = processingEntry,
-           currentItem.priority < priority {
+           currentItem.priority < entry.priority {
             tts.stopSpeaking(at: .immediate)
         }
-        let now = Date().timeIntervalSince1970
-        let expire = now + timeout_sec
-        let item = SpeechItem(text: text, priority: priority,
-                              created_time: now, expire_at: expire, completion: completion)
-        queue.insert(item)
-    }
-
-    func append(pause: Double, priority: SpeechPriority = .Normal, timeout_sec: Double = 1.0,
-                completion: ((_ item: QueueEntry, _ reason: CompletionReason) -> Void)?) {
-        if let currentItem = processingEntry,
-           currentItem.priority < priority {
-            tts.stopSpeaking(at: .immediate)
-        }
-        let now = Date().timeIntervalSince1970
-        let expire = now + timeout_sec
-        let item = PauseItem(duration: pause, priority: priority,
-                             created_time: now, expire_at: expire, completion: completion)
-        queue.insert(item)
+        queue.insert(entry)
     }
 
     func start() {
