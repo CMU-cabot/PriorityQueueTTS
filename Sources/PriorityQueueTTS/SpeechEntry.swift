@@ -20,29 +20,32 @@
  * THE SOFTWARE.
  *******************************************************************************/
 
-import XCTest
-@testable import PriorityQueueTTS
+import Foundation
+import AVFoundation
 
-final class PriorityQueueTTSHelperTests: XCTestCase {
+class SpeechEntry: QueueEntry {
+    init(
+        text: String,
+        priority: SpeechPriority = .Normal,
+        timeout_sec: TimeInterval = 10.0,
+        completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
+    ) {
+        super.init(token: Token.Text(text), priority: priority, timeout_sec: timeout_sec, completion: completion)
+    }
 
-    let sample: String = "This is a sample message... all the message should be read"
-
-    func test1_add_pause() throws {
-        var count = 0
-        PriorityQueueTTSHelper.enumerateQueueItem(text: sample, separator: ".") { text, pause in
-            if count == 0,
-               let text = text {
-                XCTAssertEqual(text, "This is a sample message")
-            }
-            if count == 1,
-               let pause = pause {
-                XCTAssertEqual(pause, 0.3, accuracy: 0.001)
-            }
-            if count == 2,
-               let text = text {
-                XCTAssertEqual(text, " all the message should be read")
-            }
-            count += 1
+    override func finish(with range: NSRange?) {
+        guard let range = range else { return }
+        if let result = self._token?.udpate(with: range), result == false {
+            completed = true
         }
     }
 }
+
+extension String {
+    func substring(after range: NSRange) -> String? {
+        guard let rangeStart = Range(range, in: self) else { return nil }
+        let startIndex = rangeStart.upperBound
+        return String(self[startIndex...])
+    }
+}
+

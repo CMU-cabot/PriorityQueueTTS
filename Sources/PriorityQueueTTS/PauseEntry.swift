@@ -22,36 +22,14 @@
 
 import Foundation
 
-class PriorityQueueTTSHelper {
-    static func enumerateQueueItem(
-        text: String,
-        separator: String,
-        handle: (_ text: String?, _ pause: Double?) -> Void
-    ) {
-        var keep = 0
-        var i = 0
-        var start = text.startIndex
-        var text = text
+class PauseEntry: QueueEntry {
 
-        while i < text.count {
-            let index = text.index(text.startIndex, offsetBy: i)
-            let char = String(text[index])
-            if char == separator {
-                keep += 1
-            } else {
-                if keep >= 3 {
-                    let endIndex = text.index(text.startIndex, offsetBy: i - keep)
-                    let substring = String(text[start..<endIndex])
-                    handle(substring, nil)
-                    handle(nil, 0.1 * Double(keep))
-                    text = String(text[text.index(text.startIndex, offsetBy: i)...])
-                    i = 0
-                    start = text.startIndex
-                }
-                keep = 0
-            }
-            i += 1
-        }
-        handle(text, nil)
+    init(
+        pause: Int,
+        priority: SpeechPriority = .Normal,
+        timeout_sec: TimeInterval = 10.0,
+        completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
+    ) {
+        super.init(token: Token.Pause(pause), priority: priority, timeout_sec: timeout_sec, completion: completion)
     }
 }

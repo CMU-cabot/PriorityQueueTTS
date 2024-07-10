@@ -20,23 +20,35 @@
  * THE SOFTWARE.
  *******************************************************************************/
 
-import Foundation
+import XCTest
+@testable import PriorityQueueTTS
 
-class PauseItem: QueueEntry {
-    var duration: Double
-    override var text: String {
-        get {
-            return "pause \(duration)"
-        }
+final class PriorityQueueTTSHelperTests: XCTestCase {
+
+    let sample: String = "This is a sample message... all the message should be read"
+
+    func test1_add_pause() throws {
+        let item = TokenizerEntry(separator: ".")
+        try? item.append(text: sample)
+        item.close()
+        XCTAssertEqual(item.tokens.count, 3)
+        XCTAssertEqual(item.tokens[0].text, "This is a sample message")
+        XCTAssertEqual(item.tokens[1].pause, 3)
+        XCTAssertEqual(item.tokens[2].text, " all the message should be read")
     }
 
-    init(
-        duration: Double,
-        priority: SpeechPriority = .Normal,
-        timeout_sec: TimeInterval = 10.0,
-        completion: ((_ item: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
-    ) {
-        self.duration = duration
-        super.init(priority: priority, timeout_sec: timeout_sec, completion: completion)
+    func test2_process_tokenizer_item() throws {
+        let expectation = self.expectation(description: "Wait for 15 seconds")
+        let tts = PriorityQueueTTS()
+        let item = TokenizerEntry(separator: ".") { entry, reason in
+            if reason == .Completed {
+                expectation.fulfill()
+            }
+        }
+        try? item.append(text: sample)
+        item.close()
+        tts.append(entry: item)
+        tts.start()
+        waitForExpectations(timeout: 15, handler: nil)
     }
 }

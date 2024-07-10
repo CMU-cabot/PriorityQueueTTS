@@ -22,22 +22,41 @@
 
 import Foundation
 
+// abstract class QueueEntry
+// higher priority first
+// earier created first
 class QueueEntry: Comparable {
-    var text: String { get { "" } }  // should be overrided by Child class
+    var token: Token? {
+        get {
+            _token
+        }
+    }
+    internal var _token: Token?
     let priority: SpeechPriority
     let created_time: TimeInterval
     let expire_at: TimeInterval
-    let completion: ((_ item: QueueEntry, _ reason: CompletionReason) -> Void)?
+    var completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)?
+    internal var completed: Bool = false
 
     init(
+        token: Token,
         priority: SpeechPriority,
         timeout_sec: TimeInterval,
         completion: ((_: QueueEntry, _: CompletionReason) -> Void)?
     ) {
+        self._token = token
         self.priority = priority
         self.created_time = Date().timeIntervalSince1970
         self.expire_at = self.created_time + timeout_sec
         self.completion = completion
+    }
+
+    func is_completed() -> Bool {
+        return completed
+    }
+
+    func finish(with: NSRange?) {
+        completed = true
     }
 
     // Comparable
