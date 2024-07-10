@@ -21,6 +21,7 @@
  *******************************************************************************/
 
 import Foundation
+import AVFoundation
 
 // abstract class QueueEntry
 // higher priority first
@@ -51,12 +52,41 @@ class QueueEntry: Comparable {
         self.completion = completion
     }
 
+    convenience init(
+        pause: Int,
+        priority: SpeechPriority = .Normal,
+        timeout_sec: TimeInterval = 10.0,
+        completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
+    ) {
+        self.init(token: Token.Pause(pause), priority: priority, timeout_sec: timeout_sec, completion: completion)
+    }
+
+    convenience init(
+        text: String,
+        priority: SpeechPriority = .Normal,
+        timeout_sec: TimeInterval = 10.0,
+        completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
+    ) {
+        self.init(token: Token.Text(text), priority: priority, timeout_sec: timeout_sec, completion: completion)
+    }
+
     func is_completed() -> Bool {
         return completed
     }
 
-    func finish(with: NSRange?) {
-        completed = true
+    func finish(with range: NSRange?) {
+        guard let token = _token else { return }
+        switch token.type {
+        case .Text:
+            guard let range = range else { return }
+            if let result = self._token?.udpate(with: range), result == false {
+                completed = true
+            }
+            break
+        case .Pause:
+            completed = true
+            break
+        }
     }
 
     // Comparable

@@ -36,16 +36,16 @@ final class PriorityQueueTTSTests: XCTestCase {
         let expectation = self.expectation(description: "Wait for 10 seconds")
         let tts = PriorityQueueTTS()
         var count = 0
-        tts.append(entry: SpeechEntry(text: "Hello1") { item, canceld in
+        tts.append(entry: QueueEntry(text: "Hello1") { item, canceld in
             XCTAssertEqual(count, 1)
             count += 1
         })
-        tts.append(entry: SpeechEntry(text: "Hello2") { item, canceld in
+        tts.append(entry: QueueEntry(text: "Hello2") { item, canceld in
             XCTAssertEqual(count, 2)
             count += 1
             expectation.fulfill()
         })
-        tts.append(entry: SpeechEntry(text: "Hello3", priority: .High) { item, canceld in
+        tts.append(entry: QueueEntry(text: "Hello3", priority: .High) { item, canceld in
             XCTAssertEqual(count, 0)
             count += 1
         })
@@ -65,7 +65,7 @@ final class PriorityQueueTTSTests: XCTestCase {
         let expectation = self.expectation(description: "Wait for 30 seconds")
         let tts = PriorityQueueTTS()
         var count = 0
-        tts.append(entry: SpeechEntry(text: sample, timeout_sec: 30.0) { item, reason in
+        tts.append(entry: QueueEntry(text: sample, timeout_sec: 30.0) { item, reason in
             switch(reason) {
             case .Paused:
                 XCTAssertEqual(self.sample, item.token?.text)
@@ -86,7 +86,7 @@ final class PriorityQueueTTSTests: XCTestCase {
             }
         })
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            tts.append(entry: SpeechEntry(text: "High Priority Message", priority: .High, timeout_sec: 1) { item, reason in
+            tts.append(entry: QueueEntry(text: "High Priority Message", priority: .High, timeout_sec: 1) { item, reason in
                 XCTAssertEqual(count, 1)
                 count += 1
             })
@@ -105,7 +105,7 @@ final class PriorityQueueTTSTests: XCTestCase {
         let expectation = self.expectation(description: "Wait for 30 seconds")
         let tts = PriorityQueueTTS()
         var count = 0
-        tts.append(entry: SpeechEntry(text: sample, timeout_sec: 30) { item, reason in
+        tts.append(entry: QueueEntry(text: sample, timeout_sec: 30) { item, reason in
             switch(reason) {
             case .Paused:
                 XCTAssertTrue(false)
@@ -121,7 +121,7 @@ final class PriorityQueueTTSTests: XCTestCase {
             }
         })
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            tts.append(entry: SpeechEntry(text: "Normal Priority Message", priority: .Normal, timeout_sec: 15) { item, reason in
+            tts.append(entry: QueueEntry(text: "Normal Priority Message", priority: .Normal, timeout_sec: 15) { item, reason in
                 XCTAssertEqual(count, 1)
                 count += 1
                 expectation.fulfill()
@@ -142,18 +142,18 @@ final class PriorityQueueTTSTests: XCTestCase {
         let tts = PriorityQueueTTS()
         var count = 0
         var start: TimeInterval = 0
-        tts.append(entry: SpeechEntry(text: "Hello1", timeout_sec: 10) { item, reason in
+        tts.append(entry: QueueEntry(text: "Hello1", timeout_sec: 10) { item, reason in
             XCTAssertEqual(count, 0)
             count += 1
             start = Date().timeIntervalSince1970
         })
-        tts.append(entry: PauseEntry(pause: 10, timeout_sec: 10) { item, reason in
+        tts.append(entry: QueueEntry(pause: 10, timeout_sec: 10) { item, reason in
             XCTAssertEqual(count, 1)
             count += 1
             let end = Date().timeIntervalSince1970
             XCTAssertLessThan(abs((end - start) - 1.0), 0.1)
         })
-        tts.append(entry: SpeechEntry(text: "Hello2", timeout_sec: 10) { item, reason in
+        tts.append(entry: QueueEntry(text: "Hello2", timeout_sec: 10) { item, reason in
             XCTAssertEqual(count, 2)
             count += 1
             expectation.fulfill()
@@ -175,7 +175,7 @@ final class PriorityQueueTTSTests: XCTestCase {
         let tts = PriorityQueueTTS()
         var count = 0
         var start: TimeInterval = 0
-        tts.append(entry: SpeechEntry(text: sample, timeout_sec: 30) { item, reason in
+        tts.append(entry: QueueEntry(text: sample, timeout_sec: 30) { item, reason in
             switch(reason) {
             case .Paused:
                 XCTAssertEqual(self.sample, item.token?.text)
@@ -196,18 +196,18 @@ final class PriorityQueueTTSTests: XCTestCase {
             }
         })
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            tts.append(entry: SpeechEntry(text: "High Priority", priority: .High, timeout_sec: 1) { item, reason in
+            tts.append(entry: QueueEntry(text: "High Priority", priority: .High, timeout_sec: 1) { item, reason in
                 XCTAssertEqual(count, 1)
                 count += 1
                 start = Date().timeIntervalSince1970
             })
-            tts.append(entry: PauseEntry(pause: 5, priority: .High, timeout_sec: 3) { item, reason in
+            tts.append(entry: QueueEntry(pause: 5, priority: .High, timeout_sec: 3) { item, reason in
                 XCTAssertEqual(count, 2)
                 count += 1
                 let end = Date().timeIntervalSince1970
                 XCTAssertLessThan(abs((end - start) - 0.5), 0.1)
             })
-            tts.append(entry: SpeechEntry(text: "Message", priority: .High, timeout_sec: 5) { item, reason in
+            tts.append(entry: QueueEntry(text: "Message", priority: .High, timeout_sec: 5) { item, reason in
                 XCTAssertEqual(count, 3)
                 count += 1
             })
@@ -229,7 +229,7 @@ final class PriorityQueueTTSTests: XCTestCase {
         let tts = PriorityQueueTTS()
         var count = 0
         var start: TimeInterval = 0
-        tts.append(entry: SpeechEntry(text: sample, timeout_sec: 30) { item, reason in
+        tts.append(entry: QueueEntry(text: sample, timeout_sec: 30) { item, reason in
             switch(reason) {
             case .Paused:
                 XCTAssertTrue(false)
@@ -245,18 +245,18 @@ final class PriorityQueueTTSTests: XCTestCase {
             }
         })
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            tts.append(entry: SpeechEntry(text: "Normal Priority", priority: .Normal, timeout_sec: 15) { item, reason in
+            tts.append(entry: QueueEntry(text: "Normal Priority", priority: .Normal, timeout_sec: 15) { item, reason in
                 XCTAssertEqual(count, 1)
                 count += 1
                 start = Date().timeIntervalSince1970
             })
-            tts.append(entry: PauseEntry(pause: 5, priority: .Normal, timeout_sec: 15) { item, reason in
+            tts.append(entry: QueueEntry(pause: 5, priority: .Normal, timeout_sec: 15) { item, reason in
                 XCTAssertEqual(count, 2)
                 count += 1
                 let end = Date().timeIntervalSince1970
                 XCTAssertLessThan(abs((end - start) - 0.5), 0.1)
             })
-            tts.append(entry: SpeechEntry(text: "Message", priority: .Normal, timeout_sec: 15) { item, reason in
+            tts.append(entry: QueueEntry(text: "Message", priority: .Normal, timeout_sec: 15) { item, reason in
                 XCTAssertEqual(count, 3)
                 count += 1
                 expectation.fulfill()

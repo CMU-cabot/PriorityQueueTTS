@@ -27,7 +27,7 @@ enum TokenizerError: Error {
     case runtimeError(String)
 }
 
-class TokenizerEntry: SpeechEntry {
+class TokenizerEntry: QueueEntry {
     override var token: Token? {
         set {
             
@@ -68,7 +68,7 @@ class TokenizerEntry: SpeechEntry {
         self.startIndex = _buffer.startIndex
         self.closed = false
         self._completion = completion
-        super.init(text: "", priority: priority, timeout_sec: timeout_sec, completion: nil)
+        super.init(token: Token.Text(""), priority: priority, timeout_sec: timeout_sec, completion: nil)
         self.completion = { entry, reason in
             switch(reason) {
             case .Canceled:
