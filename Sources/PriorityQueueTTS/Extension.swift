@@ -21,23 +21,18 @@
  *******************************************************************************/
 
 import Foundation
-import AVFoundation
 
-class SpeechEntry: QueueEntry {
-    init(
-        text: String,
-        priority: SpeechPriority = .Normal,
-        timeout_sec: TimeInterval = 10.0,
-        completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
-    ) {
-        super.init(token: Token.Text(text), priority: priority, timeout_sec: timeout_sec, completion: completion)
-    }
-
-    override func finish(with range: NSRange?) {
-        guard let range = range else { return }
-        if let result = self._token?.udpate(with: range), result == false {
-            completed = true
-        }
+extension String {
+    func substring(after range: NSRange) -> String? {
+        guard let rangeStart = Range(range, in: self) else { return nil }
+        let startIndex = rangeStart.upperBound
+        return String(self[startIndex...])
     }
 }
 
+extension NSRange {
+    mutating func append(range: NSRange) {
+        self.location = self.location + self.length + range.location
+        self.length = range.length
+    }
+}

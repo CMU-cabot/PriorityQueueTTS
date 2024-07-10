@@ -111,10 +111,3 @@ extension Token: CustomStringConvertible {
         return "Unknown Token"
     }
 }
-
-extension NSRange {
-    mutating func append(range: NSRange) {
-        self.location = self.location + self.length + range.location
-        self.length = range.length
-    }
-}
