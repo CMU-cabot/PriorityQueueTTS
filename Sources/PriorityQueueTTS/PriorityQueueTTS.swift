@@ -95,6 +95,9 @@ class PriorityQueueTTS: NSObject {
                 }
                 break
             }
+        } else {
+            processingEntry = nil
+            queue.insert(entry)
         }
     }
 

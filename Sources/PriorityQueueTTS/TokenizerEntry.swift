@@ -102,7 +102,12 @@ class TokenizerEntry: QueueEntry {
             if char == separator {
                 separatorCount += 1
             } else {
-                if separatorCount >= 3 {
+                if separatorCount == 1 {
+                    let endIndex = _buffer.index(_buffer.startIndex, offsetBy: cursor - separatorCount)
+                    let substring = String(_buffer[startIndex..<endIndex])
+                    _tokens.append(Token.Text(substring))
+                    startIndex = _buffer.index(endIndex, offsetBy: separatorCount)
+                } else if separatorCount >= 2 {
                     let endIndex = _buffer.index(_buffer.startIndex, offsetBy: cursor - separatorCount)
                     let substring = String(_buffer[startIndex..<endIndex])
                     _tokens.append(Token.Text(substring))
@@ -128,8 +133,10 @@ class TokenizerEntry: QueueEntry {
                 tokenIndex += 1
             }
         }
-        if _tokens.count <= tokenIndex {
-            completed = true
+        if closed {
+            if _tokens.count <= tokenIndex {
+                completed = true
+            }
         }
     }
 }
