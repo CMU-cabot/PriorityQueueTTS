@@ -31,6 +31,38 @@ struct Token {
     var type: TokenType
     var text: String?
     var pause: Int?
+    var readingRange: NSRange?
+    var readText: String? {
+        get {
+            if let text = text {
+                if let range = readingRange {
+                    return text.substring(before: range)
+                }
+            }
+            return nil
+        }
+    }
+    var speakingText: String? {
+        get {
+            if let text = text {
+                if let range = readingRange {
+                    return text.substring(with: range)
+                }
+            }
+            return nil
+        }
+    }
+    var willSpeakText: String? {
+        get {
+            if let text = text {
+                if let range = readingRange {
+                    return text.substring(after: range)
+                }
+            }
+            return nil
+        }
+    }
+
     var range: NSRange?
     var remainingText: String? {
         get {

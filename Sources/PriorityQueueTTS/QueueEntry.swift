@@ -80,6 +80,12 @@ class QueueEntry: Comparable {
         self.init(token: Token.Text(text), priority: priority, timeout_sec: timeout_sec, completion: completion)
     }
 
+    func progress(with range: NSRange?) {
+        guard _tokens.count > 0 else { return }
+        guard let range = range else { return }
+        _ = _tokens[0].readingRange = range
+    }
+
     func finish(with range: NSRange?) {
         guard let token = _tokens.first else { return }
         switch token.type {
@@ -94,7 +100,6 @@ class QueueEntry: Comparable {
             break
         }
     }
-
     // Comparable
     static func < (lhs: QueueEntry, rhs: QueueEntry) -> Bool {
         if lhs.priority == rhs.priority {

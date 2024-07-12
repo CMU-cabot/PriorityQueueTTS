@@ -105,14 +105,13 @@ class PriorityQueueTTS: NSObject {
     private func start(utterance: AVSpeechUtterance) {
         guard let delegate = delegate else { return }
         guard let entry = processingEntry else { return }
-        NSLog("start")
         delegate.progress(queue: self, entry: entry)
     }
 
     private func progress(range: NSRange, utterance: AVSpeechUtterance) {
         guard let delegate = delegate else { return }
         guard let entry = processingEntry else { return }
-        NSLog("progress")
+        entry.progress(with: range)
         delegate.progress(queue: self, entry: entry)
     }
 
@@ -141,17 +140,17 @@ extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
     // }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
-        NSLog("didStart \(utterance.speechString)")
+        // NSLog("didStart \(utterance.speechString)")
         start(utterance: utterance)
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        NSLog("didFinish \(utterance.speechString)")
+        // NSLog("didFinish \(utterance.speechString)")
         finish(utterance: utterance)
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        NSLog("didCancel \(utterance.speechString)")
+        // NSLog("didCancel \(utterance.speechString)")
         finish(utterance: utterance)
     }
 
@@ -161,7 +160,7 @@ extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
     // }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
-        NSLog("willSpeakRangeOfSpeechString \(utterance.speechString) \(characterRange)")
+        // NSLog("willSpeakRangeOfSpeechString \(utterance.speechString) \(characterRange)")
         speakingRange = characterRange
         progress(range: characterRange, utterance: utterance)
     }

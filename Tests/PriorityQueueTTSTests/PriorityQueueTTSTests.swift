@@ -271,6 +271,12 @@ final class PriorityQueueTTSTests: XCTestCase {
         class Delegate: PriorityQueueTTSDelegate {
             var progressCount = 0
             func progress(queue: PriorityQueueTTS, entry: QueueEntry) {
+                guard let token = entry.token,
+                      let readText = token.readText,
+                      let speakingText = token.speakingText,
+                      let willSpeakText = token.willSpeakText
+                      else { return }
+                print("\(readText) \"\(speakingText)\" \(willSpeakText)")
                 progressCount += 1
             }
         }

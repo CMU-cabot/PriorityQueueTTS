@@ -23,6 +23,17 @@
 import Foundation
 
 extension String {
+    func substring(before range: NSRange) -> String? {
+        guard let rangeStart = Range(range, in: self) else { return nil }
+        let endIndex = rangeStart.lowerBound
+        return String(self[..<endIndex])
+    }
+    func substring(with range: NSRange) -> String? {
+        guard let rangeStart = Range(range, in: self) else { return nil }
+        let startIndex = rangeStart.lowerBound
+        let endIndex = rangeStart.upperBound
+        return String(self[startIndex..<endIndex])
+    }
     func substring(after range: NSRange) -> String? {
         guard let rangeStart = Range(range, in: self) else { return nil }
         let startIndex = rangeStart.upperBound
