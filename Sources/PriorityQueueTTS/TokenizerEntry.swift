@@ -114,6 +114,12 @@ class TokenizerEntry: QueueEntry {
         }
     }
 
+    override func progress(with range: NSRange?) {
+        guard _tokens.count > tokenIndex else { return }
+        guard let range = range else { return }
+        _ = _tokens[tokenIndex].readingRange = range
+    }
+
     override func finish(with range: NSRange?) {
         if let token = self.token {
             switch token.type {

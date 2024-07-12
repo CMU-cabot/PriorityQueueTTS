@@ -160,7 +160,7 @@ extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
     // }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
-        // NSLog("willSpeakRangeOfSpeechString \(utterance.speechString) \(characterRange)")
+        NSLog("willSpeakRangeOfSpeechString \(utterance.speechString) \(characterRange)")
         speakingRange = characterRange
         progress(range: characterRange, utterance: utterance)
     }

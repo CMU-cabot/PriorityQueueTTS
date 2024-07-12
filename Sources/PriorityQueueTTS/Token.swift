@@ -32,7 +32,7 @@ struct Token {
     var text: String?
     var pause: Int?
     var readingRange: NSRange?
-    var readText: String? {
+    var spokenText: String? {
         get {
             if let text = text {
                 if let range = readingRange {

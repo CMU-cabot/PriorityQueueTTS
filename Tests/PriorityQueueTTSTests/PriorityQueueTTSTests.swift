@@ -272,11 +272,13 @@ final class PriorityQueueTTSTests: XCTestCase {
             var progressCount = 0
             func progress(queue: PriorityQueueTTS, entry: QueueEntry) {
                 guard let token = entry.token,
-                      let readText = token.readText,
+                      let text = token.text,
+                      let spokenText = token.spokenText,
                       let speakingText = token.speakingText,
                       let willSpeakText = token.willSpeakText
                       else { return }
-                print("\(readText) \"\(speakingText)\" \(willSpeakText)")
+                print("\(spokenText) \"\(speakingText)\" \(willSpeakText)")
+                XCTAssertEqual(text, spokenText + speakingText + willSpeakText)
                 progressCount += 1
             }
         }

@@ -23,16 +23,16 @@
 import XCTest
 @testable import PriorityQueueTTS
 
-final class PriorityQueueTTSHelperTests: XCTestCase {
+final class TokenizerEntryTests: XCTestCase {
 
-    let sample: String = "This is a sample message... All the message should be read"
-    let sample_no_pause: String = "This is a sample message. All the message should be read"
+    let sample: String = "This is a sample message. All the message should be read"
+    let sample_pause: String = "This is a sample message... All the message should be read"
     let long_sample: String = "This is a sample message. All the message should be read. This is a sample message. All the message should be read."
     let long_sample_pause: String = "This is a sample message... All the message should be read... This is a sample message... All the message should be read."
 
     func test1_add_pause() throws {
         let item = TokenizerEntry(separator: ".")
-        try? item.append(text: sample)
+        try? item.append(text: sample_pause)
         item.close()
         XCTAssertEqual(item.tokens.count, 3)
         XCTAssertEqual(item.tokens[0].text, "This is a sample message")
@@ -48,7 +48,7 @@ final class PriorityQueueTTSHelperTests: XCTestCase {
                 expectation.fulfill()
             }
         }
-        try? item.append(text: sample)
+        try? item.append(text: sample_pause)
         item.close()
         tts.append(entry: item)
         tts.start()
@@ -57,11 +57,26 @@ final class PriorityQueueTTSHelperTests: XCTestCase {
 
     func test3_no_pause() throws {
         let item = TokenizerEntry(separator: ".")
-        try? item.append(text: sample_no_pause)
+        try? item.append(text: sample)
         item.close()
         XCTAssertEqual(item.tokens.count, 2)
         XCTAssertEqual(item.tokens[0].text, "This is a sample message")
         XCTAssertEqual(item.tokens[1].text, " All the message should be read")
+    }
+
+    func test3_2_process_tokenizer_item() throws {
+        let expectation = self.expectation(description: "Wait for 15 seconds")
+        let tts = PriorityQueueTTS()
+        let item = TokenizerEntry(separator: ".") { entry, reason in
+            if reason == .Completed {
+                expectation.fulfill()
+            }
+        }
+        try? item.append(text: sample)
+        item.close()
+        tts.append(entry: item)
+        tts.start()
+        waitForExpectations(timeout: 15, handler: nil)
     }
 
     func test4_streaming() throws {
@@ -118,5 +133,35 @@ final class PriorityQueueTTSHelperTests: XCTestCase {
         tts.append(entry: item)
         tts.start()
         waitForExpectations(timeout: 30, handler: nil)
+    }
+
+    func test6_tts_delegate() throws {
+        let expectation = self.expectation(description: "Wait for 10 seconds")
+        let tts = PriorityQueueTTS()
+        class Delegate: PriorityQueueTTSDelegate {
+            var progressCount = 0
+            func progress(queue: PriorityQueueTTS, entry: QueueEntry) {
+                guard let token = entry.token,
+                      let readText = token.spokenText,
+                      let speakingText = token.speakingText,
+                      let willSpeakText = token.willSpeakText
+                      else { return }
+                print("\(readText) \"\(speakingText)\" \(willSpeakText)")
+                progressCount += 1
+            }
+        }
+        let delegate = Delegate()
+        tts.delegate = delegate
+        let item = TokenizerEntry(separator: ".", timeout_sec: 30) { entry, reason in
+            if reason == .Completed {
+                XCTAssertGreaterThan(delegate.progressCount, 5)
+                expectation.fulfill()
+            }
+        }
+        try item.append(text: sample)
+        item.close()
+        tts.append(entry: item)
+        tts.start()
+        waitForExpectations(timeout: 10, handler: nil)
     }
 }
