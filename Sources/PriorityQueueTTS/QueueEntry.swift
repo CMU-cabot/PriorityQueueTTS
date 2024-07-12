@@ -27,25 +27,35 @@ import AVFoundation
 // higher priority first
 // earier created first
 class QueueEntry: Comparable {
-    var token: Token? {
+    public var token: Token? {
         get {
-            _token
+            _tokens[0]
         }
     }
-    internal var _token: Token?
-    let priority: SpeechPriority
-    let created_time: TimeInterval
-    let expire_at: TimeInterval
-    var completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)?
-    internal var completed: Bool = false
+    var tokens: [Token] {
+        get {
+            _tokens
+        }
+    }
+    internal var _tokens: [Token] = []
+    public let priority: SpeechPriority
+    public let created_time: TimeInterval
+    public let expire_at: TimeInterval
+    public var completion: ((_ entry: QueueEntry, _ utterance: AVSpeechUtterance?, _ reason: CompletionReason) -> Void)?
+    public func is_completed() -> Bool {
+        return _completed
+    }
+    internal var _completed: Bool = false
 
     init(
-        token: Token,
+        token: Token?,
         priority: SpeechPriority,
         timeout_sec: TimeInterval,
-        completion: ((_: QueueEntry, _: CompletionReason) -> Void)?
+        completion: ((_: QueueEntry, _: AVSpeechUtterance?, _: CompletionReason) -> Void)?
     ) {
-        self._token = token
+        if let token = token {
+            self._tokens = [token]
+        }
         self.priority = priority
         self.created_time = Date().timeIntervalSince1970
         self.expire_at = self.created_time + timeout_sec
@@ -56,7 +66,7 @@ class QueueEntry: Comparable {
         pause: Int,
         priority: SpeechPriority = .Normal,
         timeout_sec: TimeInterval = 10.0,
-        completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
+        completion: ((_ entry: QueueEntry, _ utteracne: AVSpeechUtterance?, _ reason: CompletionReason) -> Void)? = nil
     ) {
         self.init(token: Token.Pause(pause), priority: priority, timeout_sec: timeout_sec, completion: completion)
     }
@@ -65,26 +75,22 @@ class QueueEntry: Comparable {
         text: String,
         priority: SpeechPriority = .Normal,
         timeout_sec: TimeInterval = 10.0,
-        completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
+        completion: ((_ entry: QueueEntry, _ utteracne: AVSpeechUtterance?, _ reason: CompletionReason) -> Void)? = nil
     ) {
         self.init(token: Token.Text(text), priority: priority, timeout_sec: timeout_sec, completion: completion)
     }
 
-    func is_completed() -> Bool {
-        return completed
-    }
-
     func finish(with range: NSRange?) {
-        guard let token = _token else { return }
+        guard let token = _tokens.first else { return }
         switch token.type {
         case .Text:
             guard let range = range else { return }
-            if let result = self._token?.udpate(with: range), result == false {
-                completed = true
+            if _tokens[0].udpate(with: range) == false{
+                _completed = true
             }
             break
         case .Pause:
-            completed = true
+            _completed = true
             break
         }
     }

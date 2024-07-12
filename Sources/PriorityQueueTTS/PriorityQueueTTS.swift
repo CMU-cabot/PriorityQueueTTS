@@ -24,6 +24,7 @@ import Foundation
 import AVFoundation
 
 class PriorityQueueTTS: NSObject {
+    public var delegate: PriorityQueueTTSDelegate?
     private var queue: PriorityQueue<QueueEntry> = PriorityQueue<QueueEntry>()
     private var tts: AVSpeechSynthesizer
     private var processingEntry: QueueEntry?
@@ -63,7 +64,7 @@ class PriorityQueueTTS: NSObject {
         while !queue.isEmpty {
             guard let item = queue.extractMax() else { break }
             guard let completion = item.completion else { continue }
-            completion(item, .Canceled)
+            completion(item, nil, .Canceled)
         }
     }
 
@@ -90,7 +91,7 @@ class PriorityQueueTTS: NSObject {
                 NSLog("\(token), priority:\(entry.priority)")
                 if let duration = token.duration {
                     dipatchQueue.asyncAfter(deadline: .now() + duration) {
-                        self.finish()
+                        self.finish(utterance: nil)
                     }
                 }
                 break
@@ -101,7 +102,21 @@ class PriorityQueueTTS: NSObject {
         }
     }
 
-    private func finish() {
+    private func start(utterance: AVSpeechUtterance) {
+        guard let delegate = delegate else { return }
+        guard let entry = processingEntry else { return }
+        NSLog("start")
+        delegate.progress(queue: self, entry: entry)
+    }
+
+    private func progress(range: NSRange, utterance: AVSpeechUtterance) {
+        guard let delegate = delegate else { return }
+        guard let entry = processingEntry else { return }
+        NSLog("progress")
+        delegate.progress(queue: self, entry: entry)
+    }
+
+    private func finish(utterance: AVSpeechUtterance?) {
         if let entry = processingEntry {
             entry.finish(with: speakingRange)
             if !entry.is_completed() {
@@ -109,9 +124,9 @@ class PriorityQueueTTS: NSObject {
             }
             if let completion = entry.completion {
                 if entry.is_completed() {
-                    completion(entry, .Completed)
+                    completion(entry, utterance, .Completed)
                 } else {
-                    completion(entry, .Paused)
+                    completion(entry, utterance, .Paused)
                 }
             }
         }
@@ -121,22 +136,33 @@ class PriorityQueueTTS: NSObject {
 }
 
 extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
-    @available(iOS 16.0, *)
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeak marker: AVSpeechSynthesisMarker, utterance: AVSpeechUtterance) {
-    }
+    // iOS 16.0 or newer
+    // func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeak marker: AVSpeechSynthesisMarker, utterance: AVSpeechUtterance) {
+    // }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        NSLog("didStart \(utterance.speechString)")
+        start(utterance: utterance)
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        finish()
+        NSLog("didFinish \(utterance.speechString)")
+        finish(utterance: utterance)
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        finish()
+        NSLog("didCancel \(utterance.speechString)")
+        finish(utterance: utterance)
     }
 
+    // func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
+    //    NSLog("didPause \(utterance.speechString)")
+    //    finish()
+    // }
+
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
+        NSLog("willSpeakRangeOfSpeechString \(utterance.speechString) \(characterRange)")
         speakingRange = characterRange
+        progress(range: characterRange, utterance: utterance)
     }
 }

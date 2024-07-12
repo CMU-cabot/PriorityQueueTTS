@@ -40,13 +40,7 @@ class TokenizerEntry: QueueEntry {
         }
     }
     let separator: String
-    var tokens: [Token] {
-        get {
-            _tokens
-        }
-    }
 
-    private var _tokens: [Token] = []
     private var tokenIndex: Int
     private var _buffer: String = ""
     private var separatorCount: Int
@@ -68,8 +62,8 @@ class TokenizerEntry: QueueEntry {
         self.startIndex = _buffer.startIndex
         self.closed = false
         self._completion = completion
-        super.init(token: Token.Text(""), priority: priority, timeout_sec: timeout_sec, completion: nil)
-        self.completion = { entry, reason in
+        super.init(token: nil, priority: priority, timeout_sec: timeout_sec, completion: nil)
+        self.completion = { entry, utterance, reason in
             switch(reason) {
             case .Canceled:
                 break
@@ -125,7 +119,7 @@ class TokenizerEntry: QueueEntry {
             switch token.type {
             case .Text:
                 if let range = range,
-                   let result = self._token?.udpate(with: range), result == false {
+                   let result = self.token?.udpate(with: range), result == false {
                     tokenIndex += 1
                 }
                 break
@@ -135,7 +129,7 @@ class TokenizerEntry: QueueEntry {
         }
         if closed {
             if _tokens.count <= tokenIndex {
-                completed = true
+                _completed = true
             }
         }
     }
