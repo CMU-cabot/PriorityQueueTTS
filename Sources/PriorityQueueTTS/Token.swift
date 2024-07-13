@@ -23,7 +23,7 @@
 import Foundation
 import AVFoundation
 
-struct Token {
+class Token {
     enum TokenType {
         case Text
         case Pause
@@ -35,9 +35,13 @@ struct Token {
     var spokenText: String? {
         get {
             if let text = text {
+                if finished {
+                    return text
+                }
                 if let range = readingRange {
                     return text.substring(before: range)
                 }
+                return ""
             }
             return nil
         }
@@ -45,9 +49,13 @@ struct Token {
     var speakingText: String? {
         get {
             if let text = text {
+                if finished {
+                    return ""
+                }
                 if let range = readingRange {
                     return text.substring(with: range)
                 }
+                return ""
             }
             return nil
         }
@@ -55,9 +63,13 @@ struct Token {
     var willSpeakText: String? {
         get {
             if let text = text {
+                if finished {
+                    return ""
+                }
                 if let range = readingRange {
                     return text.substring(after: range)
                 }
+                return text
             }
             return nil
         }
@@ -76,6 +88,7 @@ struct Token {
             return nil
         }
     }
+    var finished: Bool = false
 
     var utterance: AVSpeechUtterance? {
         get {
@@ -110,7 +123,7 @@ struct Token {
         return Token(type: .Pause, text: nil, pause: pause)
     }
     
-    mutating func udpate(with range: NSRange) -> Bool {
+    func udpate(with range: NSRange) -> Bool {
         guard let text = text else { return false }
         if self.range == nil {
             self.range = range
@@ -119,6 +132,7 @@ struct Token {
         }
         if let range = self.range,
            let newText = text.substring(after: range) {
+            finished = newText.count == 0
             return newText.count > 0
         }
         return false
@@ -131,7 +145,11 @@ extension Token: CustomStringConvertible {
         case .Text: 
             if let text = text,
                let remainingText = remainingText {
-                return "Text Token: \(text) (\(remainingText))"
+                var add = ""
+                withUnsafePointer(to: self) { pointer in
+                    add = "\(pointer)"
+                }
+                return "Text Token\(add): \(text) (\(remainingText)) (\(finished)"
             }
             break
         case .Pause:

@@ -36,6 +36,9 @@ class TokenizerEntry: QueueEntry {
             if tokenIndex < _tokens.count {
                 return _tokens[tokenIndex]
             }
+            if _completed {
+                return _tokens.last
+            }
             return nil
         }
     }

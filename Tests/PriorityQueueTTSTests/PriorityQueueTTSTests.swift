@@ -277,7 +277,11 @@ final class PriorityQueueTTSTests: XCTestCase {
                       let speakingText = token.speakingText,
                       let willSpeakText = token.willSpeakText
                       else { return }
-                print("\(spokenText) \"\(speakingText)\" \(willSpeakText)")
+                if speakingText.count > 0 {
+                    print("\(spokenText)\"\(speakingText)\"\(willSpeakText)")
+                } else {
+                    print("\(spokenText)\(speakingText)\(willSpeakText)")
+                }
                 XCTAssertEqual(text, spokenText + speakingText + willSpeakText)
                 progressCount += 1
             }
@@ -286,7 +290,7 @@ final class PriorityQueueTTSTests: XCTestCase {
         tts.delegate = delegate
         tts.append(entry: QueueEntry(text: sample, timeout_sec: 30) { item, utterance, reason in
             if reason == .Completed {
-                XCTAssertGreaterThan(delegate.progressCount, 5)
+                XCTAssertEqual(delegate.progressCount, 13)
                 expectation.fulfill()
             }
         })

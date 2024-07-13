@@ -142,11 +142,15 @@ final class TokenizerEntryTests: XCTestCase {
             var progressCount = 0
             func progress(queue: PriorityQueueTTS, entry: QueueEntry) {
                 guard let token = entry.token,
-                      let readText = token.spokenText,
+                      let spokenText = token.spokenText,
                       let speakingText = token.speakingText,
                       let willSpeakText = token.willSpeakText
                       else { return }
-                print("\(readText) \"\(speakingText)\" \(willSpeakText)")
+                if speakingText.count > 0 {
+                    print("\(spokenText)\"\(speakingText)\"\(willSpeakText)")
+                } else {
+                    print("\(spokenText)\(speakingText)\(willSpeakText)")
+                }
                 progressCount += 1
             }
         }
@@ -154,7 +158,7 @@ final class TokenizerEntryTests: XCTestCase {
         tts.delegate = delegate
         let item = TokenizerEntry(separator: ".", timeout_sec: 30) { entry, reason in
             if reason == .Completed {
-                XCTAssertGreaterThan(delegate.progressCount, 5)
+                XCTAssertEqual(delegate.progressCount, 15)
                 expectation.fulfill()
             }
         }

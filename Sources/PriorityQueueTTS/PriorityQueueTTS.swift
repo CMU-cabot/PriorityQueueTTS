@@ -118,6 +118,9 @@ class PriorityQueueTTS: NSObject {
     private func finish(utterance: AVSpeechUtterance?) {
         if let entry = processingEntry {
             entry.finish(with: speakingRange)
+            if let delegate = self.delegate {
+                delegate.progress(queue: self, entry: entry)
+            }
             if !entry.is_completed() {
                 queue.insert(entry)
             }

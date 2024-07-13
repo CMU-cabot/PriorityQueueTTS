@@ -100,6 +100,7 @@ class QueueEntry: Comparable {
             break
         }
     }
+
     // Comparable
     static func < (lhs: QueueEntry, rhs: QueueEntry) -> Bool {
         if lhs.priority == rhs.priority {
