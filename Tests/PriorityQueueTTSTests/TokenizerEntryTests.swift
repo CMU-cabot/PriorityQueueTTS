@@ -168,4 +168,37 @@ final class TokenizerEntryTests: XCTestCase {
         tts.start()
         waitForExpectations(timeout: 10, handler: nil)
     }
+
+    func test7_tts_delegate() throws {
+        let expectation = self.expectation(description: "Wait for 10 seconds")
+        let tts = PriorityQueueTTS()
+        class Delegate: PriorityQueueTTSDelegate {
+            var progressCount = 0
+            func progress(queue: PriorityQueueTTS, entry: QueueEntry) {
+                guard let spokenText = entry.spokenText,
+                      let speakingText = entry.speakingText,
+                      let willSpeakText = entry.willSpeakText
+                      else { return }
+                if speakingText.count > 0 {
+                    print("\(spokenText)\"\(speakingText)\"\(willSpeakText)")
+                } else {
+                    print("\(spokenText)\(speakingText)\(willSpeakText)")
+                }
+                progressCount += 1
+            }
+        }
+        let delegate = Delegate()
+        tts.delegate = delegate
+        let item = TokenizerEntry(separator: ".", timeout_sec: 30) { entry, reason in
+            if reason == .Completed {
+                XCTAssertEqual(delegate.progressCount, 15)
+                expectation.fulfill()
+            }
+        }
+        try item.append(text: sample)
+        item.close()
+        tts.append(entry: item)
+        tts.start()
+        waitForExpectations(timeout: 10, handler: nil)
+    }
 }

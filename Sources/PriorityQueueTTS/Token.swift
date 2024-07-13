@@ -38,8 +38,11 @@ class Token {
                 if finished {
                     return text
                 }
-                if let range = readingRange {
-                    return text.substring(before: range)
+                if let processedText = processedText,
+                   let text = remainingText,
+                   let range = readingRange,
+                   let text = text.substring(before: range) {
+                    return processedText + text
                 }
                 return ""
             }
@@ -48,7 +51,7 @@ class Token {
     }
     var speakingText: String? {
         get {
-            if let text = text {
+            if let text = remainingText {
                 if finished {
                     return ""
                 }
@@ -62,7 +65,7 @@ class Token {
     }
     var willSpeakText: String? {
         get {
-            if let text = text {
+            if let text = remainingText {
                 if finished {
                     return ""
                 }
@@ -75,11 +78,23 @@ class Token {
         }
     }
 
-    var range: NSRange?
+    var processedRange: NSRange?
+    var processedText: String? {
+        get {
+            if let text = text {
+                if let range = processedRange {
+                    return text.substring(with: range)
+                } else {
+                    return ""
+                }
+            }
+            return nil
+        }
+    }
     var remainingText: String? {
         get {
             if let text = text {
-                if let range = range {
+                if let range = processedRange {
                     return text.substring(after: range)
                 } else {
                     return text
@@ -125,14 +140,17 @@ class Token {
     
     func udpate(with range: NSRange) -> Bool {
         guard let text = text else { return false }
-        if self.range == nil {
-            self.range = range
+        var temp: NSRange? = nil
+        if self.processedRange == nil {
+            temp = NSRange(location: 0, length: range.location+range.length)
         } else {
-            self.range?.append(range: range)
+            temp = self.processedRange
+            temp?.append(range: range)
         }
-        if let range = self.range,
+        if let range = temp,
            let newText = text.substring(after: range) {
             finished = newText.count == 0
+            if !finished { self.processedRange = range }
             return newText.count > 0
         }
         return false

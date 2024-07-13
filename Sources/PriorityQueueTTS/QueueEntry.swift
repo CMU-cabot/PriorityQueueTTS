@@ -27,9 +27,15 @@ import AVFoundation
 // higher priority first
 // earier created first
 class QueueEntry: Comparable {
-    public var token: Token? {
+    var token: Token? {
         get {
-            _tokens[0]
+            if tokenIndex < _tokens.count {
+                return _tokens[tokenIndex]
+            }
+            if _completed {
+                return _tokens.last
+            }
+            return nil
         }
     }
     var tokens: [Token] {
@@ -38,6 +44,7 @@ class QueueEntry: Comparable {
         }
     }
     internal var _tokens: [Token] = []
+    internal var tokenIndex: Int = 0
     public let priority: SpeechPriority
     public let created_time: TimeInterval
     public let expire_at: TimeInterval
@@ -98,6 +105,62 @@ class QueueEntry: Comparable {
         case .Pause:
             _completed = true
             break
+        }
+    }
+    
+    var text: String? {
+        get {
+            var text = ""
+            for i in 0..<_tokens.count {
+                if let tokenText = _tokens[i].text {
+                    text += tokenText
+                }
+            }
+            return text
+        }
+    }
+
+    var spokenText: String? {
+        get {
+            var text = ""
+            for i in 0..<tokenIndex {
+                if let tokenText = _tokens[i].text {
+                    text += tokenText
+                }
+            }
+            if let token = self.token,
+               let tokenText = token.spokenText {
+                text += tokenText
+            }
+            return text
+        }
+    }
+
+    var speakingText: String? {
+        get {
+            if let token = self.token,
+               let tokenText = token.speakingText {
+                return tokenText
+            }
+            return ""
+        }
+    }
+
+    var willSpeakText: String? {
+        get {
+            var text = ""
+            if let token = self.token,
+               let tokenText = token.willSpeakText {
+                text += tokenText
+            }
+            if tokenIndex+1 < _tokens.count {
+                for i in tokenIndex+1..<_tokens.count {
+                    if let tokenText = _tokens[i].text {
+                        text += tokenText
+                    }
+                }
+            }
+            return text
         }
     }
 

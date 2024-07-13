@@ -28,23 +28,8 @@ enum TokenizerError: Error {
 }
 
 class TokenizerEntry: QueueEntry {
-    override var token: Token? {
-        set {
-            
-        }
-        get {
-            if tokenIndex < _tokens.count {
-                return _tokens[tokenIndex]
-            }
-            if _completed {
-                return _tokens.last
-            }
-            return nil
-        }
-    }
     let separator: String
 
-    private var tokenIndex: Int
     private var _buffer: String = ""
     private var separatorCount: Int
     private var cursor: Int
@@ -59,7 +44,6 @@ class TokenizerEntry: QueueEntry {
         completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
     ) {
         self.separator = separator
-        self.tokenIndex = 0
         self.separatorCount = 0
         self.cursor = 0
         self.startIndex = _buffer.startIndex

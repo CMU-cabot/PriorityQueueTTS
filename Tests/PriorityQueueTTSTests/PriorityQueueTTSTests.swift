@@ -297,4 +297,72 @@ final class PriorityQueueTTSTests: XCTestCase {
         tts.start()
         waitForExpectations(timeout: 10, handler: nil)
     }
+
+    func test8_tts_delegate() throws {
+        let expectation = self.expectation(description: "Wait for 10 seconds")
+        let tts = PriorityQueueTTS()
+        class Delegate: PriorityQueueTTSDelegate {
+            var progressCount = 0
+            func progress(queue: PriorityQueueTTS, entry: QueueEntry) {
+                guard let text = entry.text,
+                      let spokenText = entry.spokenText,
+                      let speakingText = entry.speakingText,
+                      let willSpeakText = entry.willSpeakText
+                      else { return }
+                if speakingText.count > 0 {
+                    print("\(spokenText)\"\(speakingText)\"\(willSpeakText)")
+                } else {
+                    print("\(spokenText)\(speakingText)\(willSpeakText)")
+                }
+                XCTAssertEqual(text, spokenText + speakingText + willSpeakText)
+                progressCount += 1
+            }
+        }
+        let delegate = Delegate()
+        tts.delegate = delegate
+        tts.append(entry: QueueEntry(text: sample, timeout_sec: 30) { item, utterance, reason in
+            if reason == .Completed {
+                XCTAssertEqual(delegate.progressCount, 13)
+                expectation.fulfill()
+            }
+        })
+        tts.start()
+        waitForExpectations(timeout: 10, handler: nil)
+    }
+
+    func test9_tts_delegate_interrupt() throws {
+        let expectation = self.expectation(description: "Wait for 10 seconds")
+        let tts = PriorityQueueTTS()
+        class Delegate: PriorityQueueTTSDelegate {
+            var progressCount = 0
+            func progress(queue: PriorityQueueTTS, entry: QueueEntry) {
+                guard let token = entry.token,
+                      let text = token.text,
+                      let spokenText = token.spokenText,
+                      let speakingText = token.speakingText,
+                      let willSpeakText = token.willSpeakText
+                      else { return }
+                if speakingText.count > 0 {
+                    print("\(spokenText)\"\(speakingText)\"\(willSpeakText)")
+                } else {
+                    print("\(spokenText)\(speakingText)\(willSpeakText)")
+                }
+                XCTAssertEqual(text, spokenText + speakingText + willSpeakText)
+                progressCount += 1
+            }
+        }
+        let delegate = Delegate()
+        tts.delegate = delegate
+        tts.append(entry: QueueEntry(text: sample, timeout_sec: 30) { item, utterance, reason in
+            if reason == .Completed {
+                expectation.fulfill()
+            }
+        })
+        tts.start()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            tts.append(entry: QueueEntry(text: "High Priority Message", priority: .High, timeout_sec: 1) { item, utterance, reason in
+            })
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+    }
 }
