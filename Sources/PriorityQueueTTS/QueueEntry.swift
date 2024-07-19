@@ -123,7 +123,7 @@ class QueueEntry: Comparable {
     var spokenText: String? {
         get {
             var text = ""
-            for i in 0..<tokenIndex {
+            for i in 0..<min(tokenIndex, _tokens.count-1) {
                 if let tokenText = _tokens[i].text {
                     text += tokenText
                 }

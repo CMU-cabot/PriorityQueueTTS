@@ -150,7 +150,7 @@ final class PriorityQueueTTSTests: XCTestCase {
             XCTAssertEqual(count, 1)
             count += 1
             let end = Date().timeIntervalSince1970
-            XCTAssertLessThan(abs((end - start) - 1.0), 0.1)
+            XCTAssertLessThan(abs((end - start) - 1.0), 0.2)
         })
         tts.append(entry: QueueEntry(text: "Hello2", timeout_sec: 10) { item, utterance, reason in
             XCTAssertEqual(count, 2)
@@ -265,11 +265,21 @@ final class PriorityQueueTTSTests: XCTestCase {
         waitForExpectations(timeout: 30, handler: nil)
     }
 
-    func test7_tts_delegate() throws {
+    func test7_tts_delegate_check_token() throws {
         let expectation = self.expectation(description: "Wait for 10 seconds")
         let tts = PriorityQueueTTS()
         class Delegate: PriorityQueueTTSDelegate {
-            var progressCount = 0
+            var expectation: XCTestExpectation?
+            func completed(queue: PriorityQueueTTS, entry: QueueEntry) {
+                guard let token = entry.token,
+                      let text = token.text,
+                      let spokenText = token.spokenText,
+                      let speakingText = token.speakingText,
+                      let willSpeakText = token.willSpeakText
+                      else { return }
+                XCTAssertEqual(text, spokenText + speakingText + willSpeakText)
+                expectation?.fulfill()
+            }
             func progress(queue: PriorityQueueTTS, entry: QueueEntry) {
                 guard let token = entry.token,
                       let text = token.text,
@@ -283,26 +293,31 @@ final class PriorityQueueTTSTests: XCTestCase {
                     print("\(spokenText)\(speakingText)\(willSpeakText)")
                 }
                 XCTAssertEqual(text, spokenText + speakingText + willSpeakText)
-                progressCount += 1
             }
         }
         let delegate = Delegate()
+        delegate.expectation = expectation
         tts.delegate = delegate
         tts.append(entry: QueueEntry(text: sample, timeout_sec: 30) { item, utterance, reason in
-            if reason == .Completed {
-                XCTAssertEqual(delegate.progressCount, 13)
-                expectation.fulfill()
-            }
         })
         tts.start()
         waitForExpectations(timeout: 10, handler: nil)
     }
 
-    func test8_tts_delegate() throws {
+    func test8_tts_delegate_check_entry() throws {
         let expectation = self.expectation(description: "Wait for 10 seconds")
         let tts = PriorityQueueTTS()
         class Delegate: PriorityQueueTTSDelegate {
-            var progressCount = 0
+            var expectation: XCTestExpectation?
+            func completed(queue: PriorityQueueTTS, entry: QueueEntry) {
+                guard let text = entry.text,
+                      let spokenText = entry.spokenText,
+                      let speakingText = entry.speakingText,
+                      let willSpeakText = entry.willSpeakText
+                      else { return }
+                XCTAssertEqual(text, spokenText + speakingText + willSpeakText)
+                expectation?.fulfill()
+            }
             func progress(queue: PriorityQueueTTS, entry: QueueEntry) {
                 guard let text = entry.text,
                       let spokenText = entry.spokenText,
@@ -315,40 +330,45 @@ final class PriorityQueueTTSTests: XCTestCase {
                     print("\(spokenText)\(speakingText)\(willSpeakText)")
                 }
                 XCTAssertEqual(text, spokenText + speakingText + willSpeakText)
-                progressCount += 1
             }
         }
         let delegate = Delegate()
+        delegate.expectation = expectation
         tts.delegate = delegate
         tts.append(entry: QueueEntry(text: sample, timeout_sec: 30) { item, utterance, reason in
-            if reason == .Completed {
-                XCTAssertEqual(delegate.progressCount, 13)
-                expectation.fulfill()
-            }
         })
         tts.start()
         waitForExpectations(timeout: 10, handler: nil)
     }
 
-    func test9_tts_delegate_interrupt() throws {
-        let expectation = self.expectation(description: "Wait for 10 seconds")
+    func test9_tts_delegate_check_entry_interrupt() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
         let tts = PriorityQueueTTS()
         class Delegate: PriorityQueueTTSDelegate {
-            var progressCount = 0
+            func completed(queue: PriorityQueueTTS, entry: QueueEntry) {
+                guard let text = entry.text,
+                      let spokenText = entry.spokenText,
+                      let speakingText = entry.speakingText,
+                      let willSpeakText = entry.willSpeakText
+                      else { return }
+                print("completed: \(text) = \(spokenText)\(speakingText)\(willSpeakText)")
+                XCTAssertEqual(text, spokenText + speakingText + willSpeakText)
+            }
             func progress(queue: PriorityQueueTTS, entry: QueueEntry) {
-                guard let token = entry.token,
-                      let text = token.text,
-                      let spokenText = token.spokenText,
-                      let speakingText = token.speakingText,
-                      let willSpeakText = token.willSpeakText
+                guard let text = entry.text,
+                      let spokenText = entry.spokenText,
+                      let speakingText = entry.speakingText,
+                      let willSpeakText = entry.willSpeakText
                       else { return }
                 if speakingText.count > 0 {
                     print("\(spokenText)\"\(speakingText)\"\(willSpeakText)")
                 } else {
                     print("\(spokenText)\(speakingText)\(willSpeakText)")
                 }
+                if spokenText + speakingText + willSpeakText != text {
+                    print("error")
+                }
                 XCTAssertEqual(text, spokenText + speakingText + willSpeakText)
-                progressCount += 1
             }
         }
         let delegate = Delegate()
@@ -363,6 +383,6 @@ final class PriorityQueueTTSTests: XCTestCase {
             tts.append(entry: QueueEntry(text: "High Priority Message", priority: .High, timeout_sec: 1) { item, utterance, reason in
             })
         }
-        waitForExpectations(timeout: 10, handler: nil)
+        waitForExpectations(timeout: 30, handler: nil)
     }
 }

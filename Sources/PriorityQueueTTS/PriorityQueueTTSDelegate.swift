@@ -25,4 +25,5 @@ import AVFoundation
 
 protocol PriorityQueueTTSDelegate {
     func progress(queue: PriorityQueueTTS, entry: QueueEntry)
+    func completed(queue: PriorityQueueTTS, entry: QueueEntry)
 }

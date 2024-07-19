@@ -39,10 +39,13 @@ class Token {
                     return text
                 }
                 if let processedText = processedText,
-                   let text = remainingText,
-                   let range = readingRange,
-                   let text = text.substring(before: range) {
-                    return processedText + text
+                   let text = remainingText {
+                    if let range = readingRange,
+                       let text = text.substring(before: range) {
+                        return processedText + text
+                    } else {
+                        return processedText
+                    }
                 }
                 return ""
             }
@@ -150,7 +153,10 @@ class Token {
         if let range = temp,
            let newText = text.substring(after: range) {
             finished = newText.count == 0
-            if !finished { self.processedRange = range }
+            if !finished {
+                self.processedRange = range
+                self.readingRange = nil
+            }
             return newText.count > 0
         }
         return false
