@@ -23,21 +23,29 @@
 import Foundation
 import AVFoundation
 
+typealias EntryFilter = (_ base: QueueEntry, _ test: QueueEntry) -> Bool
+let SameTag: EntryFilter = { base, test in base.tag == test.tag }
+
 class PriorityQueueTTS: NSObject {
+    
     public var delegate: PriorityQueueTTSDelegate?
     private var queue: PriorityQueue<QueueEntry> = PriorityQueue<QueueEntry>()
     private var tts: AVSpeechSynthesizer
     private var processingEntry: QueueEntry?
     private var speakingRange: NSRange?
     private let dipatchQueue: DispatchQueue = DispatchQueue.global(qos: .utility)
-
+    
     override init() {
         tts = AVSpeechSynthesizer()
         super.init()
         tts.delegate = self
     }
 
-    func append(entry: QueueEntry) {
+    func append(entry: QueueEntry, withRemoving:EntryFilter? = nil ) {
+        if let withRemoving {
+            cancel( where:{e in withRemoving(entry, e)} )
+        }
+        
         if let currentItem = processingEntry,
            currentItem.priority < entry.priority {
             tts.stopSpeaking(at: .immediate)
@@ -60,11 +68,28 @@ class PriorityQueueTTS: NSObject {
     }
 
     func cancel() {
+        processingEntry?.mark_canceled()
         tts.stopSpeaking(at: .word)
         while !queue.isEmpty {
             guard let item = queue.extractMax() else { break }
             guard let completion = item.completion else { continue }
             completion(item, nil, .Canceled)
+        }
+    }
+    
+    func cancel( where filter: (QueueEntry) -> Bool ) {
+        if let currentItem = processingEntry, filter(currentItem) {
+            currentItem.mark_canceled()
+            if tts.isSpeaking {
+                tts.stopSpeaking(at: .immediate)
+            }
+        }
+        queue.remove { entry in
+            if filter(entry) {
+                entry.completion?(entry, nil, .Canceled)
+                return true
+            }
+            return false
         }
     }
 
@@ -117,19 +142,24 @@ class PriorityQueueTTS: NSObject {
 
     private func finish(utterance: AVSpeechUtterance?) {
         if let entry = processingEntry {
-            entry.finish(with: speakingRange)
-            if entry.is_completed() {
-                if let delegate = self.delegate {
-                    delegate.completed(queue: self, entry: entry)
-                }
-            } else {
-                queue.insert(entry)
+            if entry.status == .canceled {
+                entry.completion?(entry, nil, .Canceled)
             }
-            if let completion = entry.completion {
+            else {
+                entry.finish(with: speakingRange)
                 if entry.is_completed() {
-                    completion(entry, utterance, .Completed)
+                    if let delegate = self.delegate {
+                        delegate.completed(queue: self, entry: entry)
+                    }
                 } else {
-                    completion(entry, utterance, .Paused)
+                    queue.insert(entry)
+                }
+                if let completion = entry.completion {
+                    if entry.is_completed() {
+                        completion(entry, utterance, .Completed)
+                    } else {
+                        completion(entry, utterance, .Paused)
+                    }
                 }
             }
         }

@@ -41,6 +41,7 @@ class TokenizerEntry: QueueEntry {
         separator: String,
         priority: SpeechPriority = .Normal,
         timeout_sec: TimeInterval = 10.0,
+        tag: Tag = .Default,
         completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
     ) {
         self.separator = separator
@@ -49,7 +50,7 @@ class TokenizerEntry: QueueEntry {
         self.startIndex = _buffer.startIndex
         self.closed = false
         self._completion = completion
-        super.init(token: nil, priority: priority, timeout_sec: timeout_sec, completion: nil)
+        super.init(token: nil, priority: priority, timeout_sec: timeout_sec, tag: tag, completion: nil)
         self.completion = { entry, utterance, reason in
             switch(reason) {
             case .Canceled:
@@ -122,7 +123,7 @@ class TokenizerEntry: QueueEntry {
         }
         if closed {
             if _tokens.count <= tokenIndex {
-                _completed = true
+                mark_completed()
             }
         }
     }
