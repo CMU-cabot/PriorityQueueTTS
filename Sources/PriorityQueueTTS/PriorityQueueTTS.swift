@@ -34,6 +34,7 @@ class PriorityQueueTTS: NSObject {
     private var processingEntry: QueueEntry?
     private var speakingRange: NSRange?
     private let dipatchQueue: DispatchQueue = DispatchQueue.global(qos: .utility)
+    private var pausing :DispatchWorkItem? = nil
     
     override init() {
         tts = AVSpeechSynthesizer()
@@ -68,8 +69,9 @@ class PriorityQueueTTS: NSObject {
     }
 
     func cancel() {
-        processingEntry?.mark_canceled()
-        tts.stopSpeaking(at: .word)
+        if let processingEntry {
+            stopProcessingImmediately( current:processingEntry, at:.word )
+        }
         while !queue.isEmpty {
             guard let item = queue.extractMax() else { break }
             guard let completion = item.completion else { continue }
@@ -79,10 +81,7 @@ class PriorityQueueTTS: NSObject {
     
     func cancel( where filter: (QueueEntry) -> Bool ) {
         if let currentItem = processingEntry, filter(currentItem) {
-            currentItem.mark_canceled()
-            if tts.isSpeaking {
-                tts.stopSpeaking(at: .immediate)
-            }
+            stopProcessingImmediately( current:currentItem )
         }
         queue.remove { entry in
             if filter(entry) {
@@ -90,6 +89,17 @@ class PriorityQueueTTS: NSObject {
                 return true
             }
             return false
+        }
+    }
+    
+    private func stopProcessingImmediately( current: QueueEntry, at boundary: AVSpeechBoundary = .immediate ) {
+        current.mark_canceled()
+        if tts.isSpeaking {
+            tts.stopSpeaking(at: boundary)
+        }
+        if let pausing {
+            pausing.cancel()
+            self.finish(utterance: nil)
         }
     }
 
@@ -115,9 +125,9 @@ class PriorityQueueTTS: NSObject {
             case .Pause:
                 NSLog("\(token), priority:\(entry.priority)")
                 if let duration = token.duration {
-                    dipatchQueue.asyncAfter(deadline: .now() + duration) {
-                        self.finish(utterance: nil)
-                    }
+                    let workItem = DispatchWorkItem() { [weak self] in self?.finish(utterance: nil) }
+                    self.pausing = workItem
+                    dipatchQueue.asyncAfter(deadline: .now() + duration, execute:workItem)
                 }
                 break
             }
@@ -165,6 +175,7 @@ class PriorityQueueTTS: NSObject {
         }
         processingEntry = nil
         speakingRange = nil
+        pausing = nil
     }
 }
 
