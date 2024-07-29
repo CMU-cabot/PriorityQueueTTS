@@ -53,12 +53,10 @@ class TokenizerEntry: QueueEntry {
         super.init(token: nil, priority: priority, timeout_sec: timeout_sec, tag: tag, completion: nil)
         self.completion = { entry, utterance, reason in
             switch(reason) {
-            case .Canceled:
-                break
             case .Completed:
                 self.tokenIndex += 1
                 break
-            case .Paused:
+            case .Paused, .Canceled:
                 break
             }
             guard let _completion = self._completion else { return }
