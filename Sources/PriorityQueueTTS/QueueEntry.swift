@@ -26,7 +26,7 @@ import AVFoundation
 // abstract class QueueEntry
 // higher priority first
 // earier created first
-class QueueEntry: Comparable {
+public class QueueEntry: Comparable {
     var token: Token? {
         get {
             if tokenIndex < _tokens.count {
@@ -165,13 +165,13 @@ class QueueEntry: Comparable {
     }
 
     // Comparable
-    static func < (lhs: QueueEntry, rhs: QueueEntry) -> Bool {
+    public static func < (lhs: QueueEntry, rhs: QueueEntry) -> Bool {
         if lhs.priority == rhs.priority {
             return lhs.created_time > rhs.created_time
         }
         return lhs.priority.rawValue < rhs.priority.rawValue
     }
-    static func == (lhs: QueueEntry, rhs: QueueEntry) -> Bool {
+    public static func == (lhs: QueueEntry, rhs: QueueEntry) -> Bool {
         return lhs.priority == rhs.priority && lhs.created_time == rhs.created_time
     }
 }

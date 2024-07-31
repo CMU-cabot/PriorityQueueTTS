@@ -23,7 +23,7 @@
 import Foundation
 import AVFoundation
 
-protocol PriorityQueueTTSDelegate {
+public protocol PriorityQueueTTSDelegate {
     func progress(queue: PriorityQueueTTS, entry: QueueEntry)
     func completed(queue: PriorityQueueTTS, entry: QueueEntry)
 }

@@ -22,8 +22,8 @@
 
 import Foundation
 
-enum SpeechPriority: Int8 {
-    typealias RawValue = Int8
+public enum SpeechPriority: Int8 {
+    public typealias RawValue = Int8
 
     case Low = 0
     case Normal = 1
@@ -32,7 +32,7 @@ enum SpeechPriority: Int8 {
 }
 
 extension SpeechPriority: Comparable {
-    static func < (lhs: SpeechPriority, rhs: SpeechPriority) -> Bool {
+    public static func < (lhs: SpeechPriority, rhs: SpeechPriority) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
 }

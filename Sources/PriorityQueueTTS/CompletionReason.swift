@@ -22,7 +22,7 @@
 
 import Foundation
 
-enum CompletionReason {
+public enum CompletionReason {
     case Completed
     case Paused
     case Canceled

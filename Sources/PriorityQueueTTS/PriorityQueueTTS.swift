@@ -23,7 +23,7 @@
 import Foundation
 import AVFoundation
 
-class PriorityQueueTTS: NSObject {
+public class PriorityQueueTTS: NSObject {
     public var delegate: PriorityQueueTTSDelegate?
     private var queue: PriorityQueue<QueueEntry> = PriorityQueue<QueueEntry>()
     private var tts: AVSpeechSynthesizer
@@ -143,17 +143,17 @@ extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
     // func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeak marker: AVSpeechSynthesisMarker, utterance: AVSpeechUtterance) {
     // }
 
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+    public func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
         // NSLog("didStart \(utterance.speechString)")
         start(utterance: utterance)
     }
 
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+    public func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         // NSLog("didFinish \(utterance.speechString)")
         finish(utterance: utterance)
     }
 
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+    public func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
         // NSLog("didCancel \(utterance.speechString)")
         finish(utterance: utterance)
     }
@@ -163,7 +163,7 @@ extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
     //    finish()
     // }
 
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
+    public func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
         NSLog("willSpeakRangeOfSpeechString \(utterance.speechString) \(characterRange)")
         speakingRange = characterRange
         progress(range: characterRange, utterance: utterance)
