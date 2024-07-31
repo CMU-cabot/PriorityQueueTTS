@@ -23,16 +23,16 @@
 import Foundation
 import AVFoundation
 
-class Token {
-    enum TokenType {
+public class Token {
+    public enum TokenType {
         case Text
         case Pause
     }
-    var type: TokenType
-    var text: String?
-    var pause: Int?
+    public var type: TokenType
+    public var text: String?
+    public var pause: Int?
     var readingRange: NSRange?
-    var spokenText: String? {
+    public var spokenText: String? {
         get {
             if let text = text {
                 if finished {
@@ -52,7 +52,7 @@ class Token {
             return nil
         }
     }
-    var speakingText: String? {
+    public var speakingText: String? {
         get {
             if let text = remainingText {
                 if finished {
@@ -66,7 +66,7 @@ class Token {
             return nil
         }
     }
-    var willSpeakText: String? {
+    public var willSpeakText: String? {
         get {
             if let text = remainingText {
                 if finished {
@@ -82,7 +82,7 @@ class Token {
     }
 
     var processedRange: NSRange?
-    var processedText: String? {
+    public var processedText: String? {
         get {
             if let text = text {
                 if let range = processedRange {
@@ -94,7 +94,7 @@ class Token {
             return nil
         }
     }
-    var remainingText: String? {
+    public var remainingText: String? {
         get {
             if let text = text {
                 if let range = processedRange {
@@ -106,9 +106,9 @@ class Token {
             return nil
         }
     }
-    var finished: Bool = false
+    public var finished: Bool = false
 
-    var utterance: AVSpeechUtterance? {
+    public var utterance: AVSpeechUtterance? {
         get {
             if let text = self.remainingText {
                 let utterance = AVSpeechUtterance(string: text)
@@ -118,7 +118,7 @@ class Token {
         }
     }
 
-    var duration: Double? {
+    public var duration: Double? {
         get {
             if let pause = pause {
                 return 0.1 * Double(pause)
@@ -164,7 +164,7 @@ class Token {
 }
 
 extension Token: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         switch type {
         case .Text: 
             if let text = text,

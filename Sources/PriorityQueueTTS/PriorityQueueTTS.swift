@@ -39,7 +39,7 @@ public class PriorityQueueTTS: NSObject {
         tts.delegate = self
     }
 
-    func append(entry: QueueEntry) {
+    public func append(entry: QueueEntry) {
         if let currentItem = processingEntry,
            currentItem.priority < entry.priority {
             tts.stopSpeaking(at: .immediate)
@@ -47,7 +47,7 @@ public class PriorityQueueTTS: NSObject {
         queue.insert(entry)
     }
 
-    func start() {
+    public func start() {
         dipatchQueue.async {
             let timer = Timer(timeInterval: 0.01, repeats: true) { timer in
                 self.processQueue()
@@ -57,11 +57,11 @@ public class PriorityQueueTTS: NSObject {
         }
     }
 
-    func pause() {
+    public func pause() {
         tts.stopSpeaking(at: .word)
     }
 
-    func cancel() {
+    public func cancel() {
         tts.stopSpeaking(at: .word)
         while !queue.isEmpty {
             guard let item = queue.extractMax() else { break }

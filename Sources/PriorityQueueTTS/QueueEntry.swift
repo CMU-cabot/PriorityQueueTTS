@@ -27,7 +27,7 @@ import AVFoundation
 // higher priority first
 // earier created first
 public class QueueEntry: Comparable {
-    var token: Token? {
+    public var token: Token? {
         get {
             if tokenIndex < _tokens.count {
                 return _tokens[tokenIndex]
@@ -38,7 +38,7 @@ public class QueueEntry: Comparable {
             return nil
         }
     }
-    var tokens: [Token] {
+    public var tokens: [Token] {
         get {
             _tokens
         }
@@ -54,7 +54,7 @@ public class QueueEntry: Comparable {
     }
     internal var _completed: Bool = false
 
-    init(
+    public init(
         token: Token?,
         priority: SpeechPriority,
         timeout_sec: TimeInterval,
@@ -69,7 +69,7 @@ public class QueueEntry: Comparable {
         self.completion = completion
     }
 
-    convenience init(
+    public convenience init(
         pause: Int,
         priority: SpeechPriority = .Normal,
         timeout_sec: TimeInterval = 10.0,
@@ -78,7 +78,7 @@ public class QueueEntry: Comparable {
         self.init(token: Token.Pause(pause), priority: priority, timeout_sec: timeout_sec, completion: completion)
     }
 
-    convenience init(
+    public convenience init(
         text: String,
         priority: SpeechPriority = .Normal,
         timeout_sec: TimeInterval = 10.0,
@@ -108,7 +108,7 @@ public class QueueEntry: Comparable {
         }
     }
     
-    var text: String? {
+    public var text: String? {
         get {
             var text = ""
             for i in 0..<_tokens.count {
@@ -120,7 +120,7 @@ public class QueueEntry: Comparable {
         }
     }
 
-    var spokenText: String? {
+    public var spokenText: String? {
         get {
             var text = ""
             for i in 0..<min(tokenIndex, _tokens.count-1) {
@@ -136,7 +136,7 @@ public class QueueEntry: Comparable {
         }
     }
 
-    var speakingText: String? {
+    public var speakingText: String? {
         get {
             if let token = self.token,
                let tokenText = token.speakingText {
@@ -146,7 +146,7 @@ public class QueueEntry: Comparable {
         }
     }
 
-    var willSpeakText: String? {
+    public var willSpeakText: String? {
         get {
             var text = ""
             if let token = self.token,

@@ -37,7 +37,7 @@ class TokenizerEntry: QueueEntry {
     private var closed: Bool
     private var _completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
 
-    init(
+    public init(
         separator: String,
         priority: SpeechPriority = .Normal,
         timeout_sec: TimeInterval = 10.0,
@@ -65,13 +65,13 @@ class TokenizerEntry: QueueEntry {
         }
     }
 
-    func append(text: String) throws {
+    public func append(text: String) throws {
         guard self.closed == false else { throw TokenizerError.runtimeError("already completed") }
         _buffer.append(text)
         process()
     }
 
-    func close() {
+    public func close() {
         _tokens.append(Token.Text(String(_buffer[startIndex...])))
         self.closed = true
     }
