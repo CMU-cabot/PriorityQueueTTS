@@ -24,6 +24,8 @@ import Foundation
 import AVFoundation
 
 public class PriorityQueueTTS: NSObject {
+    public static var shared = PriorityQueueTTS()
+
     public var delegate: PriorityQueueTTSDelegate?
     private var queue: PriorityQueue<QueueEntry> = PriorityQueue<QueueEntry>()
     private var tts: AVSpeechSynthesizer
