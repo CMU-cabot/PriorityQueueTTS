@@ -23,11 +23,11 @@
 import Foundation
 import AVFoundation
 
-enum TokenizerError: Error {
+public enum TokenizerError: Error {
     case runtimeError(String)
 }
 
-class TokenizerEntry: QueueEntry {
+public class TokenizerEntry: QueueEntry {
     let separator: String
 
     private var _buffer: String = ""
