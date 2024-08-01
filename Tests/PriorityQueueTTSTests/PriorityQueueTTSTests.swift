@@ -385,4 +385,888 @@ final class PriorityQueueTTSTests: XCTestCase {
         }
         waitForExpectations(timeout: 30, handler: nil)
     }
+
+    
+    /*  [
+        ]
+        <<  (TAG:"A", .Normal)
+     */
+    func test_10_tag_empty() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+        tts.start()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // <<  (TAG:"A", .Normal)
+            let entry1 = QueueEntry(text:self.sample, priority: .Normal, timeout_sec: 30, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 0, step.pass() )
+                    expectation.fulfill()
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry1, withRemoving:SameTag)
+        }
+        
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+
+    /*  [
+            (TAG:"Def", .Normal) // keep
+        ]
+        <<  (TAG:"A", .Normal)
+     */
+    func test_11_tag_same_levels_no_remove() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+
+        // 1) (TAG:"Def", .Normal) // keep
+        let entry1 = QueueEntry(text: sample, priority: .Normal, timeout_sec: 30 ) { item, _, reason in
+            switch(reason) {
+            case .Completed:
+                XCTAssertEqual( 0, step.pass() )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry1)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // <<   (TAG:"A", .Normal)
+            let entry2 = QueueEntry(text:"entry2: (TAG:A, .Normal)", priority: .Normal, timeout_sec: 30, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 1, step.pass() )
+                    expectation.fulfill()
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry2, withRemoving:SameTag)
+        }
+        
+        tts.start()
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+
+    /*  [
+            (TAG:"Def", .Normal) // keep
+            (TAG:"Def", .Normal) // keep
+        ]
+        <<  (TAG:"A", .Normal)
+     */
+    func test_12_tag_no_remove() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+
+        // 1) (TAG:"Def", .Normal) // keep
+        let entry1 = QueueEntry(text: sample, priority: .Normal, timeout_sec: 30 ) { item, _, reason in
+            switch(reason) {
+            case .Completed:
+                XCTAssertEqual( 0, step.pass() )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry1)
+        
+        // 2) (TAG:"Def", .Normal) // keep
+        let entry2 = QueueEntry(text: "entry2: (TAG:Def, .Normal)", priority: .Normal, timeout_sec: 30 ) { item, _, reason in
+            switch(reason) {
+            case .Completed:
+                XCTAssertEqual( 1, step.pass() )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry2)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // 3) (TAG:"A", .Normal)
+            let entry3 = QueueEntry(text:"entry3: (TAG:A, .Normal)", priority: .Normal, timeout_sec: 30, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 2, step.pass() )
+                    expectation.fulfill()
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry3, withRemoving:SameTag)
+        }
+        
+        tts.start()
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+
+    /*  [
+            (TAG:"A", .Normal) // stop-replace
+        ]
+        <<  (TAG:"A", .Normal)
+     */
+    func test_13_tag_replace_1() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+
+        // 1)  (TAG:"A", .Normal) // stop-replace
+        let entry1 = QueueEntry(text: sample, priority: .Normal, timeout_sec: 30, tag: "A" ) { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertEqual( 0, step.pass() )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry1)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // 2) (TAG:"A", .Normal)
+            let entry2 = QueueEntry(text:"entry2: (TAG:A, .Normal)", priority: .Normal, timeout_sec: 30, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 1, step.pass() )
+                    expectation.fulfill()
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry2, withRemoving:SameTag)
+        }
+        
+        tts.start()
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+
+    /*  [
+            (TAG:"A", .Normal) // stop-replace
+            (TAG:"A", .Normal) // remove
+            (TAG:"A", .Normal) // remove
+        ] // exsit entries are not filterd
+        <<  (TAG:"A", .Normal)
+     */
+    func test_14_tag_replace_all() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+
+        // 1) (TAG:"A", .Normal) // stop-replace
+        let entry1 = QueueEntry(text: sample, priority: .Normal, timeout_sec: 30, tag: "A") { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertTrue( (0...2).contains(step.pass()) )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry1)
+        
+        // 2) (TAG:"A", .Normal) // remove
+        let entry2 = QueueEntry(text:"entry2: (TAG:A, .Normal)", priority: .Normal, timeout_sec: 30, tag: "A") { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertTrue( (0...2).contains(step.pass()) )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry2)
+        
+        // 3) (TAG:"A", .Normal) // remove
+        let entry3 = QueueEntry(text:"entry3 : (TAG:A, .Normal)", priority: .Normal, timeout_sec: 30, tag: "A") { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertTrue( (0...2).contains(step.pass()) )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry3)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // <<  <<  (TAG:"A", .Normal)
+            let entry4 = QueueEntry(text:"entry4 : (TAG:A, .Normal)", priority: .Required, timeout_sec: 30, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 3, step.pass() )
+                    expectation.fulfill()
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry4, withRemoving:SameTag)
+        }
+        tts.start()
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+
+    /*  [
+            (TAG:"A", .Normal) // stop-replace
+        ]
+        <<  (TAG:"A", .High)
+     */
+    func test_15_tag_replace_1() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+
+        // 1) (TAG:"A", .Normal) // stop-replace
+        let entry1 = QueueEntry(text: sample, priority: .Normal, timeout_sec: 30, tag: "A" ) { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertEqual( 0, step.pass() )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry1)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // 2) (TAG:"A", .High)
+            let entry2 = QueueEntry(text:"entry2: (TAG:A, .High)", priority: .High, timeout_sec: 30, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 1, step.pass() )
+                    expectation.fulfill()
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry2, withRemoving:SameTag)
+        }
+        
+        tts.start()
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+
+    /*  [
+            (TAG:"A", .High) // stop-replace
+        ]
+        <<  (TAG:"A", .Normal)
+     */
+    func test_16_tag_regardless_priority() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+
+        // 1) (TAG:"A", .High) // stop-replace
+        let entry1 = QueueEntry(text: sample, priority: .High, timeout_sec: 30, tag: "A" ) { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertEqual( 0, step.pass() )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry1)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // 2) (TAG:"A", .Normal)
+            let entry2 = QueueEntry(text:"entry2: (TAG:A, .Normal)", priority: .Normal, timeout_sec: 30, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 1, step.pass() )
+                    expectation.fulfill()
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry2, withRemoving:SameTag)
+        }
+        
+        tts.start()
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+    
+    /*  [
+            (TAG:"A", .High) // stop-replace
+            (TAG:"Def", .Normal) // keep
+        ]
+        <<  (TAG:"A", .High)
+     */
+    func test_17_tag() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+
+        // 1) (TAG:"A", .High) // stop-replace
+        let entry1 = QueueEntry(text: sample, priority: .High, timeout_sec: 30, tag: "A" ) { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertEqual( 0, step.pass() )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry1)
+
+        // 2) (TAG:"Def", .Normal) // keep
+        let entry2 = QueueEntry(text: "entry2: (TAG:Def, .Normal)", priority: .Normal, timeout_sec: 30 ) { item, _, reason in
+            switch(reason) {
+            case .Completed:
+                XCTAssertEqual( 2, step.pass() )
+                expectation.fulfill()
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry2)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // 3) (TAG:"A", .High)
+            let entry3 = QueueEntry(text:"entry3: (TAG:A, .High)", priority: .High, timeout_sec: 30, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 1, step.pass() )
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry3, withRemoving:SameTag)
+        }
+        
+        tts.start()
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+    
+    /*  [
+            (TAG:"Def", .High) // keep
+            (TAG:"A", .Normal) // remove
+        ]
+        <<  (TAG:"A", .High)
+     */
+    func test_18_tag() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+
+        // 1) (TAG:"Def", .High) // keep
+        let entry1 = QueueEntry(text: sample, priority: .High, timeout_sec: 30 ) { item, _, reason in
+            switch(reason) {
+            case .Completed:
+                XCTAssertEqual( 1, step.pass() )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry1)
+
+        // 2) (TAG:"A", .Normal) // remove
+        let entry2 = QueueEntry(text: "entry2: (TAG:A, .Normal)", priority: .Normal, timeout_sec: 30, tag: "A" ) { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertEqual( 0, step.pass() )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry2)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // 3) (TAG:"A", .High)
+            let entry3 = QueueEntry(text:"entry3: (TAG:A, .High)", priority: .High, timeout_sec: 30, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 2, step.pass() )
+                    expectation.fulfill()
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry3, withRemoving:SameTag)
+        }
+        
+        tts.start()
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+    
+    /*  [
+            (TAG:"Def", .High) // interrupt
+            (TAG:"A", .Normal) // remove
+        ]
+        <<  (TAG:"A", .Required)
+     */
+    func test_19_tag_interrupt_remove() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+        
+        // 1) (TAG:"Def", .High) // interrupt
+        let entry1 = QueueEntry(text: sample, priority: .High, timeout_sec: 30) { item, _, reason in
+            switch(reason) {
+            case .Paused:
+                XCTAssertEqual( 0, step.pass() )
+            case .Completed:
+                XCTAssertEqual( 2, step.pass() )
+                expectation.fulfill()
+            case .Canceled:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry1)
+        
+        // 2) (TAG:"A", .Normal) // remove
+        let entry2 = QueueEntry(text:"entry2 : (TAG:A, .Normal)", priority: .Normal, timeout_sec: 30, tag: "A") { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertTrue(true)
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry2)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // <<  (TAG:"A", .Required)
+            let entry3 = QueueEntry(text:"entry3 : (TAG:A, .Required)", priority: .Required, timeout_sec: 30, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 1, step.pass() )
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry3, withRemoving:SameTag)
+        }
+        tts.start()
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+    
+    /*  [
+            (TAG:"A", .Required) // stop-replace
+        ]
+         <<  (TAG:"A", .Required) // stop-replace
+         <<  (TAG:"A", .Required)
+     */
+    func test_20_tag_interrupt_periodically() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+        
+        // 1) (TAG:"A", .Required) // stop-replace
+        let entry1 = QueueEntry(text: sample, priority: .Required, timeout_sec: 30, tag: "A") { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertEqual( 0, step.pass() )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry1)
+        tts.start()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            // 2) (TAG:"A", .Required) // stop-replace
+            let entry2 = QueueEntry(text:"entry2 : (TAG:A, .Required)", priority: .Required, timeout_sec: 30, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Canceled:
+                    XCTAssertEqual( 1, step.pass() )
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry2, withRemoving:SameTag)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                // << 3) (TAG:"A", .Required)
+                let entry3 = QueueEntry(text:"entry3 : (TAG:A, .Required)", priority: .Required, timeout_sec: 30, tag: "A") { item, _, reason in
+                    switch(reason) {
+                    case .Completed:
+                        XCTAssertEqual( 2, step.pass() )
+                        expectation.fulfill()
+                    default:
+                        XCTFail()
+                    }
+                }
+                tts.append(entry:entry3, withRemoving:SameTag)
+            }
+        }
+        
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+    
+    /*  [
+            (PAUSE  TAG:"A", 30sec) // stop-replace
+        ]
+         <<  (TAG:"A", .Required)
+     */
+    func test_21_tag_stop_pause() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+        
+        // 1) (PAUSE  TAG:"A", 30sec) // stop-replace
+        let entry1 = QueueEntry( pause: 300, tag: "A") { item, _, reason in
+            switch(reason) {
+            case .Completed:
+                XCTFail()
+            case .Canceled:
+                XCTAssertEqual( 0, step.pass() )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry1)
+        tts.start()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            // 2) (TAG:"A", .Required) // stop-replace
+            let entry2 = QueueEntry(text:"entry2 : (TAG:A, .Required)", priority: .Required, timeout_sec: 30, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 1, step.pass() )
+                    expectation.fulfill()
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry2, withRemoving:SameTag)
+        }
+
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+    
+    /*  [
+            (TAG:"A", .Normal) // stop-replace
+            (PAUSE  TAG:"A", 30sec, .Normal) // remove
+        ]
+         <<  (TAG:"A", .Normal)
+     */
+    func test_22_tag_remove_contain_pause() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+        
+        // 1) (TAG:"A", .Normal) // stop-replace
+        let entry1 = QueueEntry(text: sample, priority: .Normal, timeout_sec: 30, tag: "A") { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertTrue( (0...1).contains(step.pass()) )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry1)
+        
+        // 2) (PAUSE  TAG:"A", 30sec) // stop-replace
+        let entry2 = QueueEntry( pause: 300, priority: .Normal, tag: "A") { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertTrue( (0...1).contains(step.pass()) )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry2)
+        tts.start()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // 2) (TAG:"A", .Required) // stop-replace
+            let entry3 = QueueEntry(text:"entry3 : (TAG:A, .Required)", priority: .Required, timeout_sec: 30, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 2, step.pass() )
+                    expectation.fulfill()
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry3, withRemoving:SameTag)
+        }
+
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+    
+    /*  [
+            (TAG:"A", .Normal) // stop-replace
+        ]
+         <<  (PAUSE  TAG:"A", 3sec, .Normal)
+     */
+    func test_23_tag_cancel_by_pause() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+        
+        // 1) (TAG:"A", .Normal) // stop-replace
+        let entry1 = QueueEntry(text: sample, priority: .Normal, timeout_sec: 30, tag: "A") { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertEqual( 0, step.pass() )
+            default:
+                XCTFail()
+            }
+        }
+        tts.append(entry:entry1)
+        tts.start()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // 2)  (PAUSE  TAG:"A", 3sec, .Normal)
+            let entry2 = QueueEntry( pause: 30, priority: .Normal, tag: "A") { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 1, step.pass() )
+                    expectation.fulfill()
+                default:
+                    XCTFail()
+                }
+            }
+            tts.append(entry:entry2, withRemoving:SameTag)
+        }
+
+        waitForExpectations(timeout: 30, handler: nil)
+    }
+    
+    /*  [
+            1. (Text timeout: 1s )     // keep
+            2. (Pause: 3s, timeout: 10s ) // keep
+            3. (Pause: 3s, timeout: 1s )  // timeout
+            4. (Text  timeout: 10s )   // keep
+            5. (Text  timeout: 2s )    // timeout
+            6. (Text  timeout: 3s )    // timeout
+            7. (Text  timeout: 20s )   // keep
+        ]
+        
+        wait 1s
+          <<  8. (Text  timeout: 5s )      // timeout
+          <<  9. (Pause: 3s, timeout: 5s ) // timeout
+          << 10. (Text  timeout: 30s )     // keep
+     */
+    func test_24_timeout() throws {
+        let expectation = self.expectation(description: "Wait for 40 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+        
+        // 1. (Text timeout: 1s )     // keep
+        tts.append(entry: QueueEntry(text:"1. (Text timeout: 1s ) // keep", timeout_sec: 1 ) { item, _, reason in
+            switch(reason) {
+            case .Completed:
+                XCTAssertEqual( 0, step.pass() )
+            default:
+                XCTFail()
+            }
+        })
+        
+        // 2. (Pause: 3s, timeout: 10s ) // keep
+        tts.append(entry: QueueEntry( pause: 30, timeout_sec: 10 ) { item, _, reason in
+            switch(reason) {
+            case .Completed:
+                XCTAssertEqual( 1, step.pass() )
+            default:
+                XCTFail()
+            }
+        })
+
+        // 3. (Pause: 3s, timeout: 1s )  // timeout
+        tts.append(entry: QueueEntry( pause: 30, timeout_sec: 1 ) { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertEqual( 2, step.pass() )
+            default:
+                XCTFail()
+            }
+        })
+        
+        // 4. (Text  timeout: 10s )   // keep
+        tts.append(entry: QueueEntry(text:"4. (Text  timeout: 10s ) // keep", timeout_sec: 10 ) { item, _, reason in
+            switch(reason) {
+            case .Completed:
+                XCTAssertEqual( 3, step.pass() )
+            default:
+                XCTFail()
+            }
+        })
+        
+        // 5. (Text  timeout: 2s )    // timeout
+        tts.append(entry: QueueEntry(text:"5. (Text  timeout: 2s ) // timeout", timeout_sec: 2 ) { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertEqual( 4, step.pass() )
+            default:
+                XCTFail()
+            }
+        })
+        
+        // 6. (Text  timeout: 3s )    // timeout
+        tts.append(entry: QueueEntry(text:"6. (Text  timeout: 3s ) // timeout", timeout_sec: 3 ) { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertEqual( 5, step.pass() )
+            default:
+                XCTFail()
+            }
+        })
+        
+        // 7. (Text  timeout: 20s )   // keep
+        tts.append(entry: QueueEntry(text:"7. (Text  timeout: 20s ) // keep", timeout_sec: 20 ) { item, _, reason in
+            switch(reason) {
+            case .Completed:
+                XCTAssertEqual( 6, step.pass() )
+            default:
+                XCTFail()
+            }
+        })
+
+        tts.start()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            
+            // <<  8. (Text  timeout: 5s )      // timeout
+            tts.append(entry: QueueEntry(text:"<< 8. (Text timeout: 5s ) // timeout", timeout_sec: 5 ) { item, _, reason in
+                switch(reason) {
+                case .Canceled:
+                    XCTAssertEqual( 7, step.pass() )
+                default:
+                    XCTFail()
+                }
+            })
+
+            // <<  9. (Pause: 3s, timeout: 5s ) // timeout
+            tts.append(entry: QueueEntry( pause: 30, timeout_sec: 5 ) { item, _, reason in
+                switch(reason) {
+                case .Canceled:
+                    XCTAssertEqual( 8, step.pass() )
+                default:
+                    XCTFail()
+                }
+            })
+            
+            // 10. (Text  timeout: 30s )     // keep
+            tts.append(entry: QueueEntry(text:"<< 10. (Text timeout: 30s ) // keep", timeout_sec: 30 ) { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 9, step.pass() )
+                    expectation.fulfill()
+                default:
+                    XCTFail()
+                }
+            })
+        }
+
+        waitForExpectations(timeout: 40, handler: nil)
+    }
+    
+    /*  [
+            1. (Text)
+            2. (Pause: 3s)
+        ]
+        
+        wait 1s from start()
+          <<  3. (Text)
+        wait 2s from start()
+            cancel
+     */
+     func test_25_cancel_all() throws {
+         let expectation = self.expectation(description: "Wait for 30 seconds")
+         let tts = PriorityQueueTTS()
+         var step : Int = 0;
+
+         // 1. (Text)
+         tts.append(entry: QueueEntry(text:sample ) { item, _, reason in
+             switch(reason) {
+             case .Canceled:
+                 XCTAssertTrue( (0...2).contains(step.pass()) )
+                 if step == 2 { expectation.fulfill() }
+             default:
+                 XCTFail()
+             }
+         })
+         
+         // 2. (Pause: 3s)
+         tts.append(entry: QueueEntry( pause: 30 ) { item, _, reason in
+             switch(reason) {
+             case .Canceled:
+                 XCTAssertTrue( (0...2).contains(step.pass()) )
+                 if step == 2 { expectation.fulfill() }
+             default:
+                 XCTFail()
+             }
+         })
+
+         tts.start()
+
+         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+             // <<  3. (Text)
+             tts.append(entry: QueueEntry(text:"<<  3. (Text)" ) { item, _, reason in
+                 switch(reason) {
+                 case .Canceled:
+                     XCTAssertTrue( (0...2).contains(step.pass()) )
+                     if step == 2 { expectation.fulfill() }
+                 default:
+                     XCTFail()
+                 }
+             })
+         }
+
+         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+             tts.cancel()
+         }
+
+         waitForExpectations(timeout: 30, handler: nil)
+    }
+    
+    /*  [
+            1. (Pause: 3s)
+            2. (Text)
+        ]
+        
+        wait 1s from start()
+            cancel
+            << 3. (Text)
+     */
+    func test_26_cancel_pause_continue() throws {
+        let expectation = self.expectation(description: "Wait for 50 seconds")
+        let tts = PriorityQueueTTS()
+        var step : Int = 0;
+
+        // 1. (Pause: 3s)
+        tts.append(entry: QueueEntry( pause: 30 ) { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertTrue( (0...1).contains(step.pass()) )
+            default:
+                XCTFail()
+            }
+        })
+        // 2. (Text)
+        tts.append(entry: QueueEntry(text:sample ) { item, _, reason in
+            switch(reason) {
+            case .Canceled:
+                XCTAssertTrue( (0...1).contains(step.pass()) )
+            default:
+                XCTFail()
+            }
+        })
+        tts.start()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            tts.cancel()
+            
+            // << 3. (Text)
+            tts.append(entry: QueueEntry(text:"<< 3. (Text)" ) { item, _, reason in
+                switch(reason) {
+                case .Completed:
+                    XCTAssertEqual( 2, step.pass() )
+                    expectation.fulfill()
+                default:
+                    XCTFail()
+                }
+            })
+        }
+        
+        waitForExpectations(timeout: 50, handler: nil)
+   }
+}
+
+
+extension Int {
+    mutating func pass() -> Self {
+        let current = self
+        self += 1
+        return current
+    }
 }

@@ -23,6 +23,11 @@
 import Foundation
 import AVFoundation
 
+public typealias Tag = String
+public extension Tag {
+    static let Default :Tag = "default"
+}
+
 // abstract class QueueEntry
 // higher priority first
 // earier created first
@@ -32,7 +37,7 @@ public class QueueEntry: Comparable {
             if tokenIndex < _tokens.count {
                 return _tokens[tokenIndex]
             }
-            if _completed {
+            if is_completed() {
                 return _tokens.last
             }
             return nil
@@ -48,16 +53,29 @@ public class QueueEntry: Comparable {
     public let priority: SpeechPriority
     public let created_time: TimeInterval
     public let expire_at: TimeInterval
+    public let tag: Tag
     public var completion: ((_ entry: QueueEntry, _ utterance: AVSpeechUtterance?, _ reason: CompletionReason) -> Void)?
     public func is_completed() -> Bool {
-        return _completed
+        return status == .completed
     }
-    internal var _completed: Bool = false
+    enum Status {
+        case working
+        case completed
+        case canceled
+    }
+    internal private (set) var status: Status = .working
+    public func mark_canceled() {
+        status = .canceled
+    }
+    public func mark_completed() {
+        status = .completed
+    }
 
     public init(
         token: Token?,
         priority: SpeechPriority,
         timeout_sec: TimeInterval,
+        tag: Tag,
         completion: ((_: QueueEntry, _: AVSpeechUtterance?, _: CompletionReason) -> Void)?
     ) {
         if let token = token {
@@ -66,6 +84,7 @@ public class QueueEntry: Comparable {
         self.priority = priority
         self.created_time = Date().timeIntervalSince1970
         self.expire_at = self.created_time + timeout_sec
+        self.tag = tag
         self.completion = completion
     }
 
@@ -73,18 +92,20 @@ public class QueueEntry: Comparable {
         pause: Int,
         priority: SpeechPriority = .Normal,
         timeout_sec: TimeInterval = 10.0,
+        tag: Tag = .Default,
         completion: ((_ entry: QueueEntry, _ utteracne: AVSpeechUtterance?, _ reason: CompletionReason) -> Void)? = nil
     ) {
-        self.init(token: Token.Pause(pause), priority: priority, timeout_sec: timeout_sec, completion: completion)
+        self.init(token: Token.Pause(pause), priority: priority, timeout_sec: timeout_sec, tag: tag, completion: completion)
     }
 
     public convenience init(
         text: String,
         priority: SpeechPriority = .Normal,
         timeout_sec: TimeInterval = 10.0,
+        tag: Tag = .Default,
         completion: ((_ entry: QueueEntry, _ utteracne: AVSpeechUtterance?, _ reason: CompletionReason) -> Void)? = nil
     ) {
-        self.init(token: Token.Text(text), priority: priority, timeout_sec: timeout_sec, completion: completion)
+        self.init(token: Token.Text(text), priority: priority, timeout_sec: timeout_sec, tag: tag, completion: completion)
     }
 
     func progress(with range: NSRange?) {
@@ -99,11 +120,11 @@ public class QueueEntry: Comparable {
         case .Text:
             guard let range = range else { return }
             if _tokens[0].udpate(with: range) == false{
-                _completed = true
+                mark_completed()
             }
             break
         case .Pause:
-            _completed = true
+            mark_completed()
             break
         }
     }

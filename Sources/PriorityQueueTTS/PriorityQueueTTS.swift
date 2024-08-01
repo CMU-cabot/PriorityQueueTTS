@@ -23,6 +23,10 @@
 import Foundation
 import AVFoundation
 
+public typealias EntryFilter = (_ base: QueueEntry, _ test: QueueEntry) -> Bool
+public let SameTag: EntryFilter = { base, test in base.tag == test.tag }
+
+
 public class PriorityQueueTTS: NSObject {
     public static var shared = PriorityQueueTTS()
 
@@ -32,14 +36,19 @@ public class PriorityQueueTTS: NSObject {
     private var processingEntry: QueueEntry?
     private var speakingRange: NSRange?
     private let dipatchQueue: DispatchQueue = DispatchQueue.global(qos: .utility)
-
+    private var pausing :DispatchWorkItem? = nil
+    
     override init() {
         tts = AVSpeechSynthesizer()
         super.init()
         tts.delegate = self
     }
 
-    public func append(entry: QueueEntry) {
+    public func append(entry: QueueEntry, withRemoving:EntryFilter? = nil ) {
+        if let withRemoving {
+            cancel( where:{e in withRemoving(entry, e)} )
+        }
+        
         if let currentItem = processingEntry,
            currentItem.priority < entry.priority {
             tts.stopSpeaking(at: .immediate)
@@ -62,11 +71,37 @@ public class PriorityQueueTTS: NSObject {
     }
 
     public func cancel() {
-        tts.stopSpeaking(at: .word)
+        if let processingEntry {
+            stopProcessingImmediately( current:processingEntry, at:.word )
+        }
         while !queue.isEmpty {
             guard let item = queue.extractMax() else { break }
             guard let completion = item.completion else { continue }
             completion(item, nil, .Canceled)
+        }
+    }
+    
+    func cancel( where filter: (QueueEntry) -> Bool ) {
+        if let currentItem = processingEntry, filter(currentItem) {
+            stopProcessingImmediately( current:currentItem )
+        }
+        queue.remove { entry in
+            if filter(entry) {
+                entry.completion?(entry, nil, .Canceled)
+                return true
+            }
+            return false
+        }
+    }
+    
+    private func stopProcessingImmediately( current: QueueEntry, at boundary: AVSpeechBoundary = .immediate ) {
+        current.mark_canceled()
+        if tts.isSpeaking {
+            tts.stopSpeaking(at: boundary)
+        }
+        if let pausing {
+            pausing.cancel()
+            self.finish(utterance: nil)
         }
     }
 
@@ -74,7 +109,10 @@ public class PriorityQueueTTS: NSObject {
         guard processingEntry == nil else { return }
         guard !queue.isEmpty else { return }
         guard let entry = queue.extractMax() else { return }
-        guard Date().timeIntervalSince1970 < entry.expire_at else { return }
+        guard Date().timeIntervalSince1970 < entry.expire_at else {
+            entry.completion?( entry, nil, .Canceled )
+            return
+        }
         processingEntry = entry
         process(entry: entry)
     }
@@ -92,9 +130,9 @@ public class PriorityQueueTTS: NSObject {
             case .Pause:
                 NSLog("\(token), priority:\(entry.priority)")
                 if let duration = token.duration {
-                    dipatchQueue.asyncAfter(deadline: .now() + duration) {
-                        self.finish(utterance: nil)
-                    }
+                    let workItem = DispatchWorkItem() { [weak self] in self?.finish(utterance: nil) }
+                    self.pausing = workItem
+                    dipatchQueue.asyncAfter(deadline: .now() + duration, execute:workItem)
                 }
                 break
             }
@@ -119,24 +157,34 @@ public class PriorityQueueTTS: NSObject {
 
     private func finish(utterance: AVSpeechUtterance?) {
         if let entry = processingEntry {
-            entry.finish(with: speakingRange)
-            if entry.is_completed() {
-                if let delegate = self.delegate {
-                    delegate.completed(queue: self, entry: entry)
-                }
-            } else {
-                queue.insert(entry)
+            if entry.status == .canceled {
+                entry.completion?(entry, nil, .Canceled)
             }
-            if let completion = entry.completion {
+            else {
+                if let utterance, speakingRange == nil {
+                    speakingRange = NSRange(location:0, length:utterance.speechString.count)
+                }
+                
+                entry.finish(with: speakingRange)
                 if entry.is_completed() {
-                    completion(entry, utterance, .Completed)
+                    if let delegate = self.delegate {
+                        delegate.completed(queue: self, entry: entry)
+                    }
                 } else {
-                    completion(entry, utterance, .Paused)
+                    queue.insert(entry)
+                }
+                if let completion = entry.completion {
+                    if entry.is_completed() {
+                        completion(entry, utterance, .Completed)
+                    } else {
+                        completion(entry, utterance, .Paused)
+                    }
                 }
             }
         }
         processingEntry = nil
         speakingRange = nil
+        pausing = nil
     }
 }
 
