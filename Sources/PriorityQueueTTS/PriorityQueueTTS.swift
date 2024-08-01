@@ -81,7 +81,7 @@ public class PriorityQueueTTS: NSObject {
         }
     }
     
-    func cancel( where filter: (QueueEntry) -> Bool ) {
+    public func cancel( where filter: (QueueEntry) -> Bool ) {
         if let currentItem = processingEntry, filter(currentItem) {
             stopProcessingImmediately( current:currentItem )
         }
