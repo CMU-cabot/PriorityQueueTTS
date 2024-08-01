@@ -37,6 +37,14 @@ struct PriorityQueue<T: Comparable> {
         heap.append(element)
         siftUp(heap.count - 1)
     }
+    
+    mutating func remove( where filter: (T) -> Bool ) {
+        for i in (0..<heap.count).reversed() {
+            if ( filter(heap[i]) ) {
+                heap.remove(at:i)
+            }
+        }
+    }
 
     mutating func extractMax() -> T? {
         guard !heap.isEmpty else { return nil }
