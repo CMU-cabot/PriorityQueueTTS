@@ -31,7 +31,7 @@ public extension Tag {
 // abstract class QueueEntry
 // higher priority first
 // earier created first
-public class QueueEntry: Comparable {
+public class QueueEntry: Comparable, Hashable {
     public var token: Token? {
         get {
             if tokenIndex < _tokens.count {
@@ -50,6 +50,7 @@ public class QueueEntry: Comparable {
     }
     internal var _tokens: [Token] = []
     internal var tokenIndex: Int = 0
+    public let uuid: UUID
     public let priority: SpeechPriority
     public let created_time: TimeInterval
     public let expire_at: TimeInterval
@@ -81,6 +82,7 @@ public class QueueEntry: Comparable {
         if let token = token {
             self._tokens = [token]
         }
+        self.uuid = UUID()
         self.priority = priority
         self.created_time = Date().timeIntervalSince1970
         self.expire_at = self.created_time + timeout_sec
@@ -194,5 +196,10 @@ public class QueueEntry: Comparable {
     }
     public static func == (lhs: QueueEntry, rhs: QueueEntry) -> Bool {
         return lhs.priority == rhs.priority && lhs.created_time == rhs.created_time
+    }
+
+    // Hashable
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(uuid)
     }
 }
