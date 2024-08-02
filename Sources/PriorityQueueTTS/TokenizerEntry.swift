@@ -28,7 +28,7 @@ public enum TokenizerError: Error {
 }
 
 public class TokenizerEntry: QueueEntry {
-    let separator: String
+    let separators: [String]
 
     private var _buffer: String = ""
     private var separatorCount: Int
@@ -38,13 +38,13 @@ public class TokenizerEntry: QueueEntry {
     private var _completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
 
     public init(
-        separator: String,
+        separators: [String],
         priority: SpeechPriority = .Normal,
         timeout_sec: TimeInterval = 10.0,
         tag: Tag = .Default,
         completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
     ) {
-        self.separator = separator
+        self.separators = separators
         self.separatorCount = 0
         self.cursor = 0
         self.startIndex = _buffer.startIndex
@@ -79,7 +79,7 @@ public class TokenizerEntry: QueueEntry {
         while cursor < _buffer.count {
             let index = _buffer.index(_buffer.startIndex, offsetBy: cursor)
             let char = String(_buffer[index])
-            if char == separator {
+            if separators.contains(char) {
                 separatorCount += 1
             } else {
                 if separatorCount == 1 {
