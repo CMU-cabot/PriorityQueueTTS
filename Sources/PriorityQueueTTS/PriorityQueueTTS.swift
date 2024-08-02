@@ -35,7 +35,7 @@ public class PriorityQueueTTS: NSObject {
     private var tts: AVSpeechSynthesizer
     private var processingEntry: QueueEntry?
     private var speakingRange: NSRange?
-    private let dipatchQueue: DispatchQueue = DispatchQueue.global(qos: .utility)
+    private let dipatchQueue: DispatchQueue = DispatchQueue.global(qos: .userInteractive)
     private var pausing :DispatchWorkItem? = nil
     
     override init() {
