@@ -21,6 +21,7 @@
  *******************************************************************************/
 
 import XCTest
+import AVFoundation
 @testable import PriorityQueueTTS
 
 final class PriorityQueueTTSTests: XCTestCase {
@@ -1260,6 +1261,48 @@ final class PriorityQueueTTSTests: XCTestCase {
         
         waitForExpectations(timeout: 50, handler: nil)
    }
+    
+    
+    /*  [
+            1. (Voice:default)
+            2. (Voice:Fred, slowly, volume min)
+            3. (Voice:default)
+        ]
+     */
+    func test_27_speach_options() throws {
+        guard let fredVoice = AVSpeechSynthesisVoice.init(identifier:"com.apple.speech.synthesis.voice.Fred")
+        else { XCTFail("the voice is not exist"); return }
+        
+        
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step = 0
+        tts.append(entry: QueueEntry(text: "default voice speaking") { item, utterance, reason in
+            guard reason == .Completed
+                else { XCTFail(); return }
+            XCTAssertEqual( 0, step.pass() )
+        })
+        let vol :Float = 0.3
+        let rate :Float = 0.1
+        tts.append(entry: QueueEntry(text: "Fred speaking", volume:vol, speechRate:rate, voice: fredVoice) { item, utterance, reason in
+            guard reason == .Completed
+                else { XCTFail(); return }
+            
+            XCTAssertEqual( 1, step.pass() )
+            XCTAssertEqual( fredVoice, utterance?.voice )
+            XCTAssertEqual( vol, utterance?.volume )
+            XCTAssertEqual( rate, utterance?.rate )
+        })
+        tts.append(entry: QueueEntry(text: "default voice speaking") { item, utterance, reason in
+            guard reason == .Completed
+                else { XCTFail(); return }
+            XCTAssertEqual( 2, step.pass() )
+            expectation.fulfill()
+        })
+        
+        tts.start()
+        waitForExpectations(timeout: 30, handler: nil)
+    }
 }
 
 

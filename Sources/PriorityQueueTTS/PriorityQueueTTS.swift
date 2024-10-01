@@ -44,9 +44,9 @@ public class PriorityQueueTTS: NSObject {
         tts.delegate = self
     }
 
-    public func append(entry: QueueEntry, withRemoving:EntryFilter? = nil ) {
+    public func append(entry: QueueEntry, withRemoving:EntryFilter? = nil, cancelBoundary: AVSpeechBoundary = .immediate ) {
         if let withRemoving {
-            cancel( where:{e in withRemoving(entry, e)} )
+            cancel( where:{e in withRemoving(entry, e)}, at:cancelBoundary )
         }
         
         if let currentItem = processingEntry,
@@ -70,9 +70,9 @@ public class PriorityQueueTTS: NSObject {
         tts.stopSpeaking(at: .word)
     }
 
-    public func cancel() {
+    public func cancel( at boundary: AVSpeechBoundary = .word ) {
         if let processingEntry {
-            stopProcessingImmediately( current:processingEntry, at:.word )
+            stopProcessingImmediately( current:processingEntry, at:boundary )
         }
         while !queue.isEmpty {
             guard let item = queue.extractMax() else { break }
@@ -81,9 +81,9 @@ public class PriorityQueueTTS: NSObject {
         }
     }
     
-    public func cancel( where filter: (QueueEntry) -> Bool ) {
+    public func cancel( where filter: (QueueEntry) -> Bool, at boundary: AVSpeechBoundary = .immediate ) {
         if let currentItem = processingEntry, filter(currentItem) {
-            stopProcessingImmediately( current:currentItem )
+            stopProcessingImmediately( current:currentItem, at:boundary )
         }
         queue.remove { entry in
             if filter(entry) {
@@ -124,6 +124,9 @@ public class PriorityQueueTTS: NSObject {
             case .Text:
                 NSLog("speak text:\(token), priority:\(entry.priority)")
                 if let utterance = token.utterance {
+                    utterance.volume = entry.volume
+                    utterance.rate = entry.speechRate;
+                    utterance.voice = entry.voice;
                     tts.speak(utterance)
                 }
                 break
