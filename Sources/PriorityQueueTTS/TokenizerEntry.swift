@@ -42,6 +42,9 @@ public class TokenizerEntry: QueueEntry {
         priority: SpeechPriority = .Normal,
         timeout_sec: TimeInterval = 10.0,
         tag: Tag = .Default,
+        volume :Float = 1.0,
+        speechRate :Float = 0.5,
+        voice :AVSpeechSynthesisVoice? = nil,
         completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
     ) {
         self.separators = separators
@@ -50,7 +53,7 @@ public class TokenizerEntry: QueueEntry {
         self.startIndex = _buffer.startIndex
         self.closed = false
         self._completion = completion
-        super.init(token: nil, priority: priority, timeout_sec: timeout_sec, tag: tag, completion: nil)
+        super.init(token: nil, priority: priority, timeout_sec: timeout_sec, tag: tag, volume: volume, speechRate: speechRate, voice: voice, completion: nil)
         self.completion = { entry, utterance, reason in
             switch(reason) {
             case .Completed:
