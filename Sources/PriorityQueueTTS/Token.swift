@@ -31,7 +31,7 @@ public class Token {
     public var type: TokenType
     public var text: String?
     public var pause: Int?
-    var readingRange: NSRange?
+    public var readingRange: NSRange?
     public var spokenText: String? {
         get {
             if let text = text {
