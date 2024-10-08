@@ -37,4 +37,4 @@ extension SpeechPriority: Comparable {
     }
 }
 
-typealias SpeechQueuePriority = SpeechPriority
+public typealias SpeechQueuePriority = SpeechPriority
