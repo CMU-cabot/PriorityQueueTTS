@@ -188,6 +188,10 @@ public class PriorityQueueTTS: NSObject {
         speakingRange = nil
         pausing = nil
     }
+    
+    public var isSpeaking : Bool {
+        return tts.isSpeaking && !tts.isPaused
+    }
 }
 
 extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
