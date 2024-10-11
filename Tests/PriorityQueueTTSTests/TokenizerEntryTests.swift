@@ -43,7 +43,7 @@ final class TokenizerEntryTests: XCTestCase {
     func test2_process_tokenizer_item() throws {
         let expectation = self.expectation(description: "Wait for 15 seconds")
         let tts = PriorityQueueTTS()
-        let item = TokenizerEntry(separators: ["."]) { entry, reason in
+        let item = TokenizerEntry(separators: ["."]) { entry, utterance, reason in
             if reason == .Completed {
                 expectation.fulfill()
             }
@@ -67,7 +67,7 @@ final class TokenizerEntryTests: XCTestCase {
     func test3_2_process_tokenizer_item() throws {
         let expectation = self.expectation(description: "Wait for 15 seconds")
         let tts = PriorityQueueTTS()
-        let item = TokenizerEntry(separators: ["."]) { entry, reason in
+        let item = TokenizerEntry(separators: ["."]) { entry, utterance, reason in
             if reason == .Completed {
                 expectation.fulfill()
             }
@@ -83,7 +83,7 @@ final class TokenizerEntryTests: XCTestCase {
         let expectation = self.expectation(description: "Wait for 30 seconds")
         let tts = PriorityQueueTTS()
         var response = 0
-        let item = TokenizerEntry(separators: ["."], timeout_sec: 30) { entry, reason in
+        let item = TokenizerEntry(separators: ["."], timeout_sec: 30) { entry, utterance, reason in
             response += 1
             if (response == 4) {
                 expectation.fulfill()
@@ -111,7 +111,7 @@ final class TokenizerEntryTests: XCTestCase {
         let expectation = self.expectation(description: "Wait for 30 seconds")
         let tts = PriorityQueueTTS()
         var response = 0
-        let item = TokenizerEntry(separators: ["."], timeout_sec: 30) { entry, reason in
+        let item = TokenizerEntry(separators: ["."], timeout_sec: 30) { entry, utterance, reason in
             response += 1
             if (response == 7) {
                 expectation.fulfill()
@@ -164,7 +164,7 @@ final class TokenizerEntryTests: XCTestCase {
         }
         let delegate = Delegate()
         tts.delegate = delegate
-        let item = TokenizerEntry(separators: ["."], timeout_sec: 30) { entry, reason in
+        let item = TokenizerEntry(separators: ["."], timeout_sec: 30) { entry, utterance, reason in
             if reason == .Completed {
                 expectation.fulfill()
             }
@@ -207,7 +207,7 @@ final class TokenizerEntryTests: XCTestCase {
         }
         let delegate = Delegate()
         tts.delegate = delegate
-        let item = TokenizerEntry(separators: ["."], timeout_sec: 30) { entry, reason in
+        let item = TokenizerEntry(separators: ["."], timeout_sec: 30) { entry, utterance, reason in
             if reason == .Completed {
                 expectation.fulfill()
             }
@@ -247,7 +247,7 @@ final class TokenizerEntryTests: XCTestCase {
         }
         let delegate = Delegate()
         tts.delegate = delegate
-        let item = TokenizerEntry(separators: ["."], timeout_sec: 30) { entry, reason in
+        let item = TokenizerEntry(separators: ["."], timeout_sec: 30) { entry, utterance, reason in
             if reason == .Completed {
                 expectation.fulfill()
             }
@@ -273,7 +273,7 @@ final class TokenizerEntryTests: XCTestCase {
         let tts = PriorityQueueTTS()
         var step : Int = 0;
 
-        let entry1 = TokenizerEntry(separators: ["."], tag: "A") { entry, reason in
+        let entry1 = TokenizerEntry(separators: ["."], tag: "A") { entry, utterance, reason in
             switch(reason) {
             case .Canceled:
                 XCTAssertEqual(0, step.pass())
@@ -290,7 +290,7 @@ final class TokenizerEntryTests: XCTestCase {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             // 2)  (TAG:"A", .Normal)
-            let entry2 = TokenizerEntry(separators: ["."], tag: "A") { entry, reason in
+            let entry2 = TokenizerEntry(separators: ["."], tag: "A") { entry, utterance, reason in
                 switch(reason) {
                 case .Paused:
                     XCTAssertEqual(1, step.pass())
@@ -320,7 +320,7 @@ final class TokenizerEntryTests: XCTestCase {
         let tts = PriorityQueueTTS()
         var step : Int = 0;
 
-        let entry1 = TokenizerEntry(separators: ["."], tag: "A") { entry, reason in
+        let entry1 = TokenizerEntry(separators: ["."], tag: "A") { entry, utterance, reason in
             switch(reason) {
             case .Canceled:
                 XCTAssertTrue( (0...1).contains(step.pass()) )
@@ -335,7 +335,7 @@ final class TokenizerEntryTests: XCTestCase {
         tts.append(entry: entry1)
         
         // 2) (TAG:"A", .Normal) // remove
-        let entry2 = TokenizerEntry(separators: ["."], tag: "A") { entry, reason in
+        let entry2 = TokenizerEntry(separators: ["."], tag: "A") { entry, utterance, reason in
             switch(reason) {
             case .Canceled:
                 XCTAssertTrue( (0...1).contains(step.pass()) )
@@ -353,7 +353,7 @@ final class TokenizerEntryTests: XCTestCase {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             // 3)  (TAG:"A", .Normal)
-            let entry3 = TokenizerEntry(separators: ["."], tag: "A") { entry, reason in
+            let entry3 = TokenizerEntry(separators: ["."], tag: "A") { entry, utterance, reason in
                 switch(reason) {
                 case .Paused:
                     XCTAssertEqual(2, step.pass())
@@ -384,7 +384,7 @@ final class TokenizerEntryTests: XCTestCase {
         var step : Int = 0;
 
         // 1) (TAG:"Def", .Normal) // keep
-        let entry1 = TokenizerEntry(separators: ["."]) { entry, reason in
+        let entry1 = TokenizerEntry(separators: ["."]) { entry, utterance, reason in
             switch(reason) {
             case .Paused:
                 XCTAssertTrue( (0...2).contains(step.pass()) )
@@ -399,7 +399,7 @@ final class TokenizerEntryTests: XCTestCase {
         tts.append(entry: entry1)
         
         // 2) (TAG:"A", .Normal) // remove
-        let entry2 = TokenizerEntry(separators: ["."], tag: "A") { entry, reason in
+        let entry2 = TokenizerEntry(separators: ["."], tag: "A") { entry, utterance, reason in
             switch(reason) {
             case .Canceled:
                 XCTAssertTrue( (0...2).contains(step.pass()) )
@@ -415,7 +415,7 @@ final class TokenizerEntryTests: XCTestCase {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             // 3)  (TAG:"A", .Normal)
-            let entry3 = TokenizerEntry(separators: ["."], tag: "A") { entry, reason in
+            let entry3 = TokenizerEntry(separators: ["."], tag: "A") { entry, utterance, reason in
                 switch(reason) {
                 case .Paused:
                     XCTAssertEqual(4, step.pass())
@@ -446,7 +446,7 @@ final class TokenizerEntryTests: XCTestCase {
         var step : Int = 0;
 
         // 1) (TAG:"Def", .High) // interrupt
-        let entry1 = TokenizerEntry(separators: ["."], priority: .High) { entry, reason in
+        let entry1 = TokenizerEntry(separators: ["."], priority: .High) { entry, utterance, reason in
             switch(reason) {
             case .Paused:
                 XCTAssertTrue( Set([0,1,4,5]).contains(step.pass()) )
@@ -462,7 +462,7 @@ final class TokenizerEntryTests: XCTestCase {
         tts.append(entry: entry1)
         
         // 2) (TAG:"A", .Normal) // remove
-        let entry2 = TokenizerEntry(separators: ["."], tag: "A") { entry, reason in
+        let entry2 = TokenizerEntry(separators: ["."], tag: "A") { entry, utterance, reason in
             switch(reason) {
             case .Canceled:
                 XCTAssertTrue( Set([0,1]).contains(step.pass()) )
@@ -478,7 +478,7 @@ final class TokenizerEntryTests: XCTestCase {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             // 3) (TAG:"A", .Required)
-            let entry3 = TokenizerEntry(separators: ["."], priority: .Required, tag: "A") { entry, reason in
+            let entry3 = TokenizerEntry(separators: ["."], priority: .Required, tag: "A") { entry, utterance, reason in
                 switch(reason) {
                 case .Paused:
                     XCTAssertEqual(2, step.pass())
@@ -510,7 +510,7 @@ final class TokenizerEntryTests: XCTestCase {
         var step : Int = 0;
 
         // 1. (Text TAG:"A") // stop-replace not closed
-        let entry1 = TokenizerEntry(separators: ["."], tag: "A") { entry, reason in
+        let entry1 = TokenizerEntry(separators: ["."], tag: "A") { entry, utterance, reason in
             switch(reason) {
             case .Canceled:
                 XCTAssertTrue( (0...1).contains(step.pass()) )
@@ -525,7 +525,7 @@ final class TokenizerEntryTests: XCTestCase {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             //  << 2. (Text TAG:"A")
-            let entry2 = TokenizerEntry(separators: ["."], tag: "A") { entry, reason in
+            let entry2 = TokenizerEntry(separators: ["."], tag: "A") { entry, utterance, reason in
                 switch(reason) {
                 case .Paused:
                     XCTAssertTrue( (0...1).contains(step.pass()) )
@@ -568,7 +568,7 @@ final class TokenizerEntryTests: XCTestCase {
         var step : Int = 0;
 
         // 1. (Text .Normal) // interrupt -> timeout
-        let entry1 = TokenizerEntry(separators: ["."], priority: .Normal, timeout_sec: 4) { entry, reason in
+        let entry1 = TokenizerEntry(separators: ["."], priority: .Normal, timeout_sec: 4) { entry, utterance, reason in
             switch(reason) {
             case .Paused:
                 XCTAssertEqual(0, step.pass())

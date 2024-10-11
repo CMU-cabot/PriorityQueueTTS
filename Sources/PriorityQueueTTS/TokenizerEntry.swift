@@ -35,7 +35,7 @@ public class TokenizerEntry: QueueEntry {
     private var cursor: Int
     private var startIndex: String.Index
     private var closed: Bool
-    private var _completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
+    private var _completion: ((_: QueueEntry, _: AVSpeechUtterance?, _: CompletionReason) -> Void)? = nil
 
     public init(
         separators: [String],
@@ -45,7 +45,7 @@ public class TokenizerEntry: QueueEntry {
         volume :Float = 1.0,
         speechRate :Float = 0.5,
         voice :AVSpeechSynthesisVoice? = nil,
-        completion: ((_ entry: QueueEntry, _ reason: CompletionReason) -> Void)? = nil
+        completion: ((_: QueueEntry, _: AVSpeechUtterance?, _: CompletionReason) -> Void)? = nil
     ) {
         self.separators = separators
         self.separatorCount = 0
@@ -63,7 +63,7 @@ public class TokenizerEntry: QueueEntry {
                 break
             }
             guard let _completion = self._completion else { return }
-            _completion(entry, reason)
+            _completion(entry, utterance, reason)
         }
     }
 
