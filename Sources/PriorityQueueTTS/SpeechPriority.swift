@@ -36,3 +36,5 @@ extension SpeechPriority: Comparable {
         lhs.rawValue < rhs.rawValue
     }
 }
+
+public typealias SpeechQueuePriority = SpeechPriority

@@ -31,7 +31,16 @@ public class Token {
     public var type: TokenType
     public var text: String?
     public var pause: Int?
-    public var readingRange: NSRange?
+    public var readingRange: NSRange? {
+        didSet {
+            if let newValue = readingRange {
+                bufferedRange.push(newValue)
+            }
+        }
+    }
+    public var bufferedRange = BufferedRange()
+    
+    
     public var spokenText: String? {
         get {
             if let text = text {
@@ -183,5 +192,31 @@ extension Token: CustomStringConvertible {
             break
         }
         return "Unknown Token"
+    }
+}
+
+
+public struct BufferedRange {
+    public private(set) var progressCount :Int
+    public private(set) var range :NSRange
+    var history = [NSRange]()
+    let threshold :Int
+    
+    public init( threshold:Int = 5 ) {
+        self.range = NSRange( location:0, length:0 )
+        self.threshold = threshold
+        self.progressCount = 0
+    }
+    
+    public mutating func push( _ range:NSRange ) {
+        progressCount += 1
+        history.append( range )
+        var total = history.reduce(0) { pre, r in (pre + r.length) }
+        self.range = NSRange( location:history.first!.location, length:total )
+        while (total > threshold) {
+            guard history.count > 0 else { break }
+            let top = history.removeFirst()
+            total -= top.length
+        }
     }
 }

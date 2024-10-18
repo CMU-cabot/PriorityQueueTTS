@@ -152,10 +152,9 @@ public class PriorityQueueTTS: NSObject {
     }
 
     private func progress(range: NSRange, utterance: AVSpeechUtterance) {
-        guard let delegate = delegate else { return }
         guard let entry = processingEntry else { return }
         entry.progress(with: range)
-        delegate.progress(queue: self, entry: entry)
+        delegate?.progress(queue: self, entry: entry)
     }
 
     private func finish(utterance: AVSpeechUtterance?) {
@@ -188,6 +187,10 @@ public class PriorityQueueTTS: NSObject {
         processingEntry = nil
         speakingRange = nil
         pausing = nil
+    }
+    
+    public var isSpeaking : Bool {
+        return tts.isSpeaking && !tts.isPaused
     }
 }
 
