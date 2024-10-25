@@ -77,7 +77,7 @@ public class PriorityQueueTTS: NSObject {
         while !queue.isEmpty {
             guard let item = queue.extractMax() else { break }
             guard let completion = item.completion else { continue }
-            completion(item, nil, .Canceled)
+            completion(item, item.token, .Canceled)
         }
     }
     
@@ -110,7 +110,7 @@ public class PriorityQueueTTS: NSObject {
         guard !queue.isEmpty else { return }
         guard let entry = queue.extractMax() else { return }
         guard Date().timeIntervalSince1970 < entry.expire_at else {
-            entry.completion?( entry, nil, .Canceled )
+            entry.completion?( entry, entry.token, .Canceled )
             return
         }
         processingEntry = entry
@@ -167,6 +167,7 @@ public class PriorityQueueTTS: NSObject {
                     speakingRange = NSRange(location:0, length:utterance.speechString.count)
                 }
                 
+                let token = entry.token
                 entry.finish(with: speakingRange)
                 if entry.is_completed() {
                     if let delegate = self.delegate {
@@ -177,9 +178,9 @@ public class PriorityQueueTTS: NSObject {
                 }
                 if let completion = entry.completion {
                     if entry.is_completed() {
-                        completion(entry, utterance, .Completed)
+                        completion(entry, token, .Completed)
                     } else {
-                        completion(entry, utterance, .Paused)
+                        completion(entry, token, .Paused)
                     }
                 }
             }
