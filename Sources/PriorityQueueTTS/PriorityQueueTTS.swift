@@ -51,7 +51,7 @@ public class PriorityQueueTTS: NSObject {
         
         if let currentItem = processingEntry,
            currentItem.priority < entry.priority {
-            tts.stopSpeaking(at: .immediate)
+            tts.stopSpeaking(at: cancelBoundary)
         }
         queue.insert(entry)
     }
@@ -91,6 +91,12 @@ public class PriorityQueueTTS: NSObject {
                 return true
             }
             return false
+        }
+    }
+    
+    public func stopSpeaking( at boundary: AVSpeechBoundary = .immediate ) {
+        if tts.isSpeaking {
+            tts.stopSpeaking(at: boundary)
         }
     }
     
