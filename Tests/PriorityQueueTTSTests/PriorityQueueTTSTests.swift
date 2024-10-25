@@ -1300,6 +1300,37 @@ final class PriorityQueueTTSTests: XCTestCase {
         tts.start()
         waitForExpectations(timeout: 30, handler: nil)
     }
+    
+    
+    func test_28_stop_speaking() throws {
+        let expectation = self.expectation(description: "Wait for 30 seconds")
+        let tts = PriorityQueueTTS()
+        var step = 0
+        tts.append(entry: QueueEntry(text: "this is first message.", priority: .Required) { item, token, reason in
+            switch(reason) {
+            case .Paused:
+                XCTAssertEqual( 0, step.pass() )
+            case .Completed:
+                XCTAssertEqual( 1, step.pass() )
+            case .Canceled:
+                XCTFail()
+            }
+        })
+        tts.append(entry: QueueEntry(text: "this is second message.", priority: .Normal) { item, token, reason in
+            guard reason == .Completed
+                else { XCTFail(); return }
+            XCTAssertEqual( 2, step.pass() )
+            expectation.fulfill()
+        })
+        
+        tts.start()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            tts.stopSpeaking(at: .immediate)
+        }
+        
+        waitForExpectations(timeout: 30, handler: nil)
+    }
 }
 
 
