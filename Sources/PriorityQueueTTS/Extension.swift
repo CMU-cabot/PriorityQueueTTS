@@ -46,4 +46,12 @@ extension NSRange {
         self.location = self.location + self.length + range.location
         self.length = range.length
     }
+    
+    var nextLocation : Int {
+        return self.location + self.length
+    }
+    
+    func shift( _ shift: Int ) -> NSRange {
+        return NSRange(location: self.location + shift, length: self.length)
+    }
 }

@@ -58,7 +58,7 @@ public class QueueEntry: Comparable, Hashable {
     public let volume :Float
     public let speechRate :Float
     public let voice :AVSpeechSynthesisVoice?
-    public var completion: ((_ entry: QueueEntry, _ utterance: AVSpeechUtterance?, _ reason: CompletionReason) -> Void)?
+    public var completion: ((_ entry: QueueEntry, _ token: Token?, _ reason: CompletionReason) -> Void)?
     public func is_completed() -> Bool {
         return status == .completed
     }
@@ -83,7 +83,7 @@ public class QueueEntry: Comparable, Hashable {
         volume :Float,
         speechRate :Float,
         voice :AVSpeechSynthesisVoice?,
-        completion: ((_: QueueEntry, _: AVSpeechUtterance?, _: CompletionReason) -> Void)?
+        completion: ((_: QueueEntry, _: Token?, _: CompletionReason) -> Void)?
     ) {
         if let token = token {
             self._tokens = [token]
@@ -104,7 +104,7 @@ public class QueueEntry: Comparable, Hashable {
         priority: SpeechPriority = .Normal,
         timeout_sec: TimeInterval = 10.0,
         tag: Tag = .Default,
-        completion: ((_ entry: QueueEntry, _ utteracne: AVSpeechUtterance?, _ reason: CompletionReason) -> Void)? = nil
+        completion: ((_ entry: QueueEntry, _ token: Token?, _ reason: CompletionReason) -> Void)? = nil
     ) {
         self.init(token: Token.Pause(pause), priority: priority, timeout_sec: timeout_sec, tag: tag, volume: 0, speechRate: 0, voice: nil, completion: completion)
     }
@@ -117,7 +117,7 @@ public class QueueEntry: Comparable, Hashable {
         volume :Float = 1.0,
         speechRate :Float = 0.5,
         voice :AVSpeechSynthesisVoice? = nil,
-        completion: ((_ entry: QueueEntry, _ utteracne: AVSpeechUtterance?, _ reason: CompletionReason) -> Void)? = nil
+        completion: ((_ entry: QueueEntry, _ token: Token?, _ reason: CompletionReason) -> Void)? = nil
     ) {
         self.init(token: Token.Text(text), priority: priority, timeout_sec: timeout_sec, tag: tag, volume: volume, speechRate: speechRate, voice: voice, completion: completion)
     }

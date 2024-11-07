@@ -33,14 +33,16 @@ public class Token {
     public var pause: Int?
     public var readingRange: NSRange? {
         didSet {
-            if let newValue = readingRange {
+            if let newValue = absoluteReadingRange {
                 bufferedRange.push(newValue)
             }
         }
     }
     public var bufferedRange = BufferedRange()
-    
-    
+    public var absoluteReadingRange: NSRange? {
+        return readingRange?.shift(processedRange?.nextLocation ?? 0)
+    }
+
     public var spokenText: String? {
         get {
             if let text = text {
@@ -159,6 +161,7 @@ public class Token {
             temp = self.processedRange
             temp?.append(range: range)
         }
+        bufferedRange.clearHistory()
         if let range = temp,
            let newText = text.substring(after: range) {
             finished = newText.count == 0
@@ -218,5 +221,9 @@ public struct BufferedRange {
             let top = history.removeFirst()
             total -= top.length
         }
+    }
+    
+    public mutating func clearHistory() {
+        history.removeAll()
     }
 }
