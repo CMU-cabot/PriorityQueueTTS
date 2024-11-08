@@ -77,11 +77,13 @@ public class PriorityQueueTTS: NSObject {
         if let processingEntry {
             stopProcessingImmediately( current:processingEntry, at:boundary )
         }
+        let brefore = queue.count
         while !queue.isEmpty {
             guard let item = queue.extractMax() else { break }
             guard let completion = item.completion else { continue }
             completion(item, item.token, .Canceled)
         }
+        NSLog("[TTS] cancel queue (\(brefore) -> \(queue.count)")
     }
     
     public func cancel( where filter: (QueueEntry) -> Bool, at boundary: AVSpeechBoundary = .immediate ) {
@@ -104,8 +106,10 @@ public class PriorityQueueTTS: NSObject {
     }
     
     private func stopProcessingImmediately( current: QueueEntry, at boundary: AVSpeechBoundary = .immediate ) {
+        NSLog("[TTS] stopProcessingImmediately...")
         current.mark_canceled()
         if tts.isSpeaking {
+            NSLog("[TTS] stopSpeaking")
             tts.stopSpeaking(at: boundary)
         }
         if let pausing {
