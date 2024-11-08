@@ -42,8 +42,8 @@ public class TokenizerEntry: QueueEntry {
         priority: SpeechPriority = .Normal,
         timeout_sec: TimeInterval = 10.0,
         tag: Tag = .Default,
-        volume :Float = 1.0,
-        speechRate :Float = 0.5,
+        volume :Float? = nil,
+        speechRate :Float? = nil,
         voice :AVSpeechSynthesisVoice? = nil,
         completion: ((_: QueueEntry, _: Token?, _: CompletionReason) -> Void)? = nil
     ) {

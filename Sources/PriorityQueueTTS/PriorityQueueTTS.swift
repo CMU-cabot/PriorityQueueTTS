@@ -31,6 +31,9 @@ public class PriorityQueueTTS: NSObject {
     public static var shared = PriorityQueueTTS()
 
     public var delegate: PriorityQueueTTSDelegate?
+    public var volume :Float = 1.0
+    public var speechRate :Float = 0.5
+    public var voice :AVSpeechSynthesisVoice? = nil
     private var queue: PriorityQueue<QueueEntry> = PriorityQueue<QueueEntry>()
     private var tts: AVSpeechSynthesizer
     private var processingEntry: QueueEntry?
@@ -130,9 +133,9 @@ public class PriorityQueueTTS: NSObject {
             case .Text:
                 NSLog("speak text:\(token), priority:\(entry.priority)")
                 if let utterance = token.utterance {
-                    utterance.volume = entry.volume
-                    utterance.rate = entry.speechRate;
-                    utterance.voice = entry.voice;
+                    utterance.volume = entry.volume ?? self.volume
+                    utterance.rate = entry.speechRate ?? self.speechRate
+                    utterance.voice = entry.voice ?? self.voice
                     tts.speak(utterance)
                 }
                 break
