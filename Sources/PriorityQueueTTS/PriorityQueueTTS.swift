@@ -61,7 +61,7 @@ public class PriorityQueueTTS: NSObject {
 
     public func start() {
         dipatchQueue.async {
-            let timer = Timer(timeInterval: 0.01, repeats: true) { timer in
+            let timer = Timer(timeInterval: 0.1, repeats: true) { timer in
                 self.processQueue()
             }
             RunLoop.current.add(timer, forMode: .default)
