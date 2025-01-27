@@ -206,6 +206,18 @@ public class PriorityQueueTTS: NSObject {
     public var isSpeaking : Bool {
         return tts.isSpeaking && !tts.isPaused
     }
+
+    public func toggleSpeakState() {
+        if tts.isPaused {
+            tts.continueSpeaking()
+        } else if tts.isSpeaking {
+            tts.pauseSpeaking(at: .immediate)
+        }
+    }
+
+    public var isPaused: Bool {
+        return tts.isPaused
+    }
 }
 
 extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
