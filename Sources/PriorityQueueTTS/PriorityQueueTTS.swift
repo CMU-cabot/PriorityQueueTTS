@@ -210,7 +210,7 @@ public class PriorityQueueTTS: NSObject {
     public func toggleSpeakState() {
         if tts.isPaused {
             tts.continueSpeaking()
-        } else if tts.isSpeaking {
+        } else if tts.isSpeaking, let currentItem = processingEntry, currentItem.priority < .Required {
             tts.pauseSpeaking(at: .immediate)
         }
     }
