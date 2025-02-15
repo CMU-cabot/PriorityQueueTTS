@@ -218,6 +218,10 @@ public class PriorityQueueTTS: NSObject {
     public var isPaused: Bool {
         return tts.isPaused
     }
+
+    public var priority: SpeechPriority? {
+        return processingEntry?.priority
+    }
 }
 
 extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
