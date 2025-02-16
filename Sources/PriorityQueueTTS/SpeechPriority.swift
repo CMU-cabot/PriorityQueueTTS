@@ -28,8 +28,8 @@ public enum SpeechPriority: Int8 {
     case Low = 10
     case Chat = 20
     case Normal = 30
-    case High = 40
-    case Required = 50
+    case High = 60
+    case Required = 90
 }
 
 extension SpeechPriority: Comparable {
