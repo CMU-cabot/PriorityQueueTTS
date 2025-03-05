@@ -27,6 +27,7 @@ public enum SpeechPriority: Int8 {
 
     case Low = 10
     case Chat = 20
+    case Moderate = 25
     case Normal = 30
     case High = 60
     case Required = 90
