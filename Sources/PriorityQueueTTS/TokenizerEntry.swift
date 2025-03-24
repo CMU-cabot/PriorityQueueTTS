@@ -78,6 +78,22 @@ public class TokenizerEntry: QueueEntry {
         self.closed = true
     }
 
+    private func flushSeparator() {
+        if separatorCount == 1 {
+            let endIndex = _buffer.index(_buffer.startIndex, offsetBy: cursor)
+            let substring = String(_buffer[startIndex..<endIndex])
+            _tokens.append(Token.Text(substring))
+            startIndex = endIndex
+        } else if separatorCount >= 2 {
+            let endIndex = _buffer.index(_buffer.startIndex, offsetBy: cursor - separatorCount)
+            let substring = String(_buffer[startIndex..<endIndex])
+            _tokens.append(Token.Text(substring))
+            _tokens.append(Token.Pause(separatorCount))
+            startIndex = _buffer.index(endIndex, offsetBy: separatorCount)
+        }
+        separatorCount = 0
+    }
+
     private func process() {
         while cursor < _buffer.count {
             let index = _buffer.index(_buffer.startIndex, offsetBy: cursor)
@@ -85,22 +101,11 @@ public class TokenizerEntry: QueueEntry {
             if separators.contains(char) {
                 separatorCount += 1
             } else {
-                if separatorCount == 1 {
-                    let endIndex = _buffer.index(_buffer.startIndex, offsetBy: cursor)
-                    let substring = String(_buffer[startIndex..<endIndex])
-                    _tokens.append(Token.Text(substring))
-                    startIndex = endIndex
-                } else if separatorCount >= 2 {
-                    let endIndex = _buffer.index(_buffer.startIndex, offsetBy: cursor - separatorCount)
-                    let substring = String(_buffer[startIndex..<endIndex])
-                    _tokens.append(Token.Text(substring))
-                    _tokens.append(Token.Pause(separatorCount))
-                    startIndex = _buffer.index(endIndex, offsetBy: separatorCount)
-                }
-                separatorCount = 0
+                flushSeparator()
             }
             cursor += 1
         }
+        flushSeparator()
     }
 
     override func progress(with range: NSRange?) {
