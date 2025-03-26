@@ -25,10 +25,12 @@ import Foundation
 public enum SpeechPriority: Int8 {
     public typealias RawValue = Int8
 
-    case Low = 0
-    case Normal = 1
-    case High = 2
-    case Required = 3
+    case Low = 10
+    case Chat = 20
+    case Moderate = 25
+    case Normal = 30
+    case High = 60
+    case Required = 90
 }
 
 extension SpeechPriority: Comparable {

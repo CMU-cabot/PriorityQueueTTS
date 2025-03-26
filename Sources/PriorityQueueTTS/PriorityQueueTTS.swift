@@ -31,6 +31,9 @@ public class PriorityQueueTTS: NSObject {
     public static var shared = PriorityQueueTTS()
 
     public var delegate: PriorityQueueTTSDelegate?
+    public var volume :Float = 1.0
+    public var speechRate :Float = 0.5
+    public var voice :AVSpeechSynthesisVoice? = nil
     private var queue: PriorityQueue<QueueEntry> = PriorityQueue<QueueEntry>()
     private var tts: AVSpeechSynthesizer
     private var processingEntry: QueueEntry?
@@ -58,7 +61,7 @@ public class PriorityQueueTTS: NSObject {
 
     public func start() {
         dipatchQueue.async {
-            let timer = Timer(timeInterval: 0.01, repeats: true) { timer in
+            let timer = Timer(timeInterval: 0.1, repeats: true) { timer in
                 self.processQueue()
             }
             RunLoop.current.add(timer, forMode: .default)
@@ -74,11 +77,13 @@ public class PriorityQueueTTS: NSObject {
         if let processingEntry {
             stopProcessingImmediately( current:processingEntry, at:boundary )
         }
+        let brefore = queue.count
         while !queue.isEmpty {
             guard let item = queue.extractMax() else { break }
             guard let completion = item.completion else { continue }
             completion(item, item.token, .Canceled)
         }
+        NSLog("[TTS] cancel queue (\(brefore) -> \(queue.count)")
     }
     
     public func cancel( where filter: (QueueEntry) -> Bool, at boundary: AVSpeechBoundary = .immediate ) {
@@ -101,8 +106,10 @@ public class PriorityQueueTTS: NSObject {
     }
     
     private func stopProcessingImmediately( current: QueueEntry, at boundary: AVSpeechBoundary = .immediate ) {
+        NSLog("[TTS] stopProcessingImmediately...")
         current.mark_canceled()
         if tts.isSpeaking {
+            NSLog("[TTS] stopSpeaking")
             tts.stopSpeaking(at: boundary)
         }
         if let pausing {
@@ -130,9 +137,9 @@ public class PriorityQueueTTS: NSObject {
             case .Text:
                 NSLog("speak text:\(token), priority:\(entry.priority)")
                 if let utterance = token.utterance {
-                    utterance.volume = entry.volume
-                    utterance.rate = entry.speechRate;
-                    utterance.voice = entry.voice;
+                    utterance.volume = entry.volume ?? self.volume
+                    utterance.rate = entry.speechRate ?? self.speechRate
+                    utterance.voice = entry.voice ?? self.voice
                     tts.speak(utterance)
                 }
                 break
@@ -199,6 +206,22 @@ public class PriorityQueueTTS: NSObject {
     public var isSpeaking : Bool {
         return tts.isSpeaking && !tts.isPaused
     }
+
+    public func toggleSpeakState(at boundary: AVSpeechBoundary = .immediate) {
+        if tts.isPaused {
+            tts.continueSpeaking()
+        } else if tts.isSpeaking, let currentItem = processingEntry, currentItem.priority < .Required {
+            tts.pauseSpeaking(at: boundary)
+        }
+    }
+
+    public var isPaused: Bool {
+        return tts.isPaused
+    }
+
+    public var priority: SpeechPriority? {
+        return processingEntry?.priority
+    }
 }
 
 extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
@@ -213,6 +236,13 @@ extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
 
     public func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         // NSLog("didFinish \(utterance.speechString)")
+        if let range = speakingRange {
+            let newLocation = range.location + range.length
+            if newLocation < utterance.speechString.count {
+                let newRange = NSRange(location: newLocation, length: utterance.speechString.count - newLocation)
+                speechSynthesizer(synthesizer, willSpeakRangeOfSpeechString: newRange, utterance: utterance)
+            }
+        }
         finish(utterance: utterance)
     }
 

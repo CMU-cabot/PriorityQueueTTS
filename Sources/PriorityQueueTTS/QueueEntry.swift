@@ -55,8 +55,8 @@ public class QueueEntry: Comparable, Hashable {
     public let created_time: TimeInterval
     public let expire_at: TimeInterval
     public let tag: Tag
-    public let volume :Float
-    public let speechRate :Float
+    public let volume :Float?
+    public let speechRate :Float?
     public let voice :AVSpeechSynthesisVoice?
     public var completion: ((_ entry: QueueEntry, _ token: Token?, _ reason: CompletionReason) -> Void)?
     public func is_completed() -> Bool {
@@ -80,8 +80,8 @@ public class QueueEntry: Comparable, Hashable {
         priority: SpeechPriority,
         timeout_sec: TimeInterval,
         tag: Tag,
-        volume :Float,
-        speechRate :Float,
+        volume :Float?,
+        speechRate :Float?,
         voice :AVSpeechSynthesisVoice?,
         completion: ((_: QueueEntry, _: Token?, _: CompletionReason) -> Void)?
     ) {
@@ -114,8 +114,8 @@ public class QueueEntry: Comparable, Hashable {
         priority: SpeechPriority = .Normal,
         timeout_sec: TimeInterval = 10.0,
         tag: Tag = .Default,
-        volume :Float = 1.0,
-        speechRate :Float = 0.5,
+        volume :Float? = nil,
+        speechRate :Float? = nil,
         voice :AVSpeechSynthesisVoice? = nil,
         completion: ((_ entry: QueueEntry, _ token: Token?, _ reason: CompletionReason) -> Void)? = nil
     ) {
