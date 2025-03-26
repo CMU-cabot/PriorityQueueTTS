@@ -236,6 +236,13 @@ extension PriorityQueueTTS: AVSpeechSynthesizerDelegate {
 
     public func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         // NSLog("didFinish \(utterance.speechString)")
+        if let range = speakingRange {
+            let newLocation = range.location + range.length
+            if newLocation < utterance.speechString.count {
+                let newRange = NSRange(location: newLocation, length: utterance.speechString.count - newLocation)
+                speechSynthesizer(synthesizer, willSpeakRangeOfSpeechString: newRange, utterance: utterance)
+            }
+        }
         finish(utterance: utterance)
     }
 
