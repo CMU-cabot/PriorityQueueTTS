@@ -207,12 +207,23 @@ public class PriorityQueueTTS: NSObject {
         return tts.isSpeaking && !tts.isPaused
     }
 
-    public func toggleSpeakState(at boundary: AVSpeechBoundary = .immediate) {
+    public func toggleSpeakState(at boundary: AVSpeechBoundary = .immediate) -> Bool? {
         if tts.isPaused {
-            tts.continueSpeaking()
+            continueSpeaking()
+            return false
         } else if tts.isSpeaking, let currentItem = processingEntry, currentItem.priority < .Required {
-            tts.pauseSpeaking(at: boundary)
+            pauseSpeaking(at: boundary)
+            return true
         }
+        return nil
+    }
+
+    public func continueSpeaking() {
+        tts.continueSpeaking()
+    }
+
+    public func pauseSpeaking(at boundary: AVSpeechBoundary = .immediate) {
+        tts.pauseSpeaking(at: boundary)
     }
 
     public var isPaused: Bool {
